@@ -1,6 +1,7 @@
 from .base_model import BaseModel
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id
 import hashlib
+from typing import Optional, List, Dict, Any
 
 class User(BaseModel):
     """
@@ -183,7 +184,7 @@ class User(BaseModel):
             print(f"❌ Error deleting user: {e}")
             return False
     
-    def get_recipes(self, limit: int = 10) -> List['Recipe']:
+    def get_recipes(self, limit: int = 10) -> List:
         """
         Get all recipes created by this user
         
@@ -191,12 +192,14 @@ class User(BaseModel):
             limit (int): Maximum number of recipes to return
             
         Returns:
-            List[Recipe]: List of recipe instances
+            List: List of recipe instances (will be Recipe objects when Recipe model is created)
         """
         if self.userid is None:
             return []
         
-        return Recipe.get_by_author(self.userid, limit)
+        # For now, return empty list until Recipe model is implemented
+        # return Recipe.get_by_author(self.userid, limit)
+        return []
     
     def get_stats(self) -> Dict[str, Any]:
         """
@@ -237,3 +240,61 @@ class User(BaseModel):
         except Exception as e:
             print(f"❌ Error getting user stats: {e}")
             return {}
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> 'User':
+        """
+        Create User instance from dictionary
+        
+        Args:
+            data (dict): User data dictionary
+            
+        Returns:
+            User: User instance
+        """
+        user = cls()
+        
+        # Handle different key formats (case-insensitive)
+        for key, value in data.items():
+            key_lower = key.lower()
+            if key_lower == 'userid':
+                user.userid = value
+            elif key_lower == 'username':
+                user.username = value
+            elif key_lower == 'email':
+                user.email = value
+            elif key_lower == 'passwordhash':
+                user.passwordhash = value
+            elif key_lower == 'profilepicurl':
+                user.profilepicurl = value
+            elif key_lower == 'bio':
+                user.bio = value
+            elif key_lower == 'createdat':
+                user.createdat = value
+        
+        return user
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert User instance to dictionary
+        
+        Returns:
+            Dict[str, Any]: User data dictionary
+        """
+        return {
+            'userid': self.userid,
+            'username': self.username,
+            'email': self.email,
+            'passwordhash': self.passwordhash,
+            'profilepicurl': self.profilepicurl,
+            'bio': self.bio,
+            'createdat': self.createdat
+        }
+    
+    def __str__(self) -> str:
+        """String representation of User"""
+        return f"User(id={self.userid}, username='{self.username}', email='{self.email}')"
+    
+    def __repr__(self) -> str:
+        """Detailed string representation of User"""
+        return self.__str__()

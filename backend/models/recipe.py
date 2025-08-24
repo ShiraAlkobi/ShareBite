@@ -1,8 +1,11 @@
 from .base_model import BaseModel
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id
 import hashlib
-from typing import List, Optional
-from .tag import Tag
+from typing import List, Optional, TYPE_CHECKING
+
+# Use TYPE_CHECKING to avoid circular import
+if TYPE_CHECKING:
+    from .tag import Tag
 
 class Recipe(BaseModel):
     """
@@ -65,7 +68,7 @@ class Recipe(BaseModel):
             return None
             
         except Exception as e:
-            print(f"❌ Error getting recipe by ID: {e}")
+            print(f"Error getting recipe by ID: {e}")
             return None
     
     @classmethod
@@ -99,7 +102,7 @@ class Recipe(BaseModel):
             return recipes
             
         except Exception as e:
-            print(f"❌ Error getting recipes by author: {e}")
+            print(f"Error getting recipes by author: {e}")
             return []
     
     @classmethod
@@ -133,7 +136,7 @@ class Recipe(BaseModel):
             return recipes
             
         except Exception as e:
-            print(f"❌ Error getting all recipes: {e}")
+            print(f"Error getting all recipes: {e}")
             return []
     
     @classmethod
@@ -191,7 +194,7 @@ class Recipe(BaseModel):
             return recipes
             
         except Exception as e:
-            print(f"❌ Error searching recipes: {e}")
+            print(f"Error searching recipes: {e}")
             return []
     
     def save(self) -> bool:
@@ -212,7 +215,7 @@ class Recipe(BaseModel):
                      self.instructions, self.imageurl, self.rawingredients, self.servings)
                 )
                 self.recipeid = recipe_id
-                print(f"✅ Recipe created with ID: {recipe_id}")
+                print(f"Recipe created with ID: {recipe_id}")
                 return True
             else:
                 # Update existing recipe
@@ -224,11 +227,11 @@ class Recipe(BaseModel):
                     (self.title, self.description, self.ingredients, self.instructions,
                      self.imageurl, self.rawingredients, self.servings, self.recipeid)
                 )
-                print(f"✅ Recipe updated, {rows_affected} rows affected")
+                print(f"Recipe updated, {rows_affected} rows affected")
                 return rows_affected > 0
                 
         except Exception as e:
-            print(f"❌ Error saving recipe: {e}")
+            print(f"Error saving recipe: {e}")
             return False
     
     def delete(self) -> bool:
@@ -247,11 +250,11 @@ class Recipe(BaseModel):
                 (self.recipeid,)
             )
             
-            print(f"✅ Recipe deleted, {rows_affected} rows affected")
+            print(f"Recipe deleted, {rows_affected} rows affected")
             return rows_affected > 0
             
         except Exception as e:
-            print(f"❌ Error deleting recipe: {e}")
+            print(f"Error deleting recipe: {e}")
             return False
     
     def _get_tags(self) -> List[str]:
@@ -270,7 +273,7 @@ class Recipe(BaseModel):
             return [row['TagName'] for row in result]
             
         except Exception as e:
-            print(f"❌ Error getting recipe tags: {e}")
+            print(f"Error getting recipe tags: {e}")
             return []
     
     def _get_likes_count(self) -> int:
@@ -286,7 +289,7 @@ class Recipe(BaseModel):
             return count or 0
             
         except Exception as e:
-            print(f"❌ Error getting likes count: {e}")
+            print(f"Error getting likes count: {e}")
             return 0
     
     def _get_favorites_count(self) -> int:
@@ -302,7 +305,7 @@ class Recipe(BaseModel):
             return count or 0
             
         except Exception as e:
-            print(f"❌ Error getting favorites count: {e}")
+            print(f"Error getting favorites count: {e}")
             return 0
     
     def add_tag(self, tag_name: str) -> bool:
@@ -319,6 +322,9 @@ class Recipe(BaseModel):
             return False
         
         try:
+            # Import Tag only when needed to avoid circular import
+            from .tag import Tag
+            
             # Get or create tag
             tag = Tag.get_or_create(tag_name)
             if not tag:
@@ -343,7 +349,7 @@ class Recipe(BaseModel):
             return rows_affected > 0
             
         except Exception as e:
-            print(f"❌ Error adding tag to recipe: {e}")
+            print(f"Error adding tag to recipe: {e}")
             return False
     
     def remove_tag(self, tag_name: str) -> bool:
@@ -371,5 +377,5 @@ class Recipe(BaseModel):
             return rows_affected > 0
             
         except Exception as e:
-            print(f"❌ Error removing tag from recipe: {e}")
+            print(f"Error removing tag from recipe: {e}")
             return False

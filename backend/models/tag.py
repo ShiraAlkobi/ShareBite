@@ -1,8 +1,11 @@
 from .base_model import BaseModel
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id
 import hashlib
-from typing import List, Optional
-from .recipe import Recipe
+from typing import List, Optional, TYPE_CHECKING
+
+# Use TYPE_CHECKING to avoid circular import
+if TYPE_CHECKING:
+    from .recipe import Recipe
 
 class Tag(BaseModel):
     """
@@ -41,7 +44,7 @@ class Tag(BaseModel):
             return None
             
         except Exception as e:
-            print(f"❌ Error getting tag by ID: {e}")
+            print(f"Error getting tag by ID: {e}")
             return None
     
     @classmethod
@@ -69,7 +72,7 @@ class Tag(BaseModel):
             return None
             
         except Exception as e:
-            print(f"❌ Error getting tag by name: {e}")
+            print(f"Error getting tag by name: {e}")
             return None
     
     @classmethod
@@ -103,7 +106,7 @@ class Tag(BaseModel):
             return tags
             
         except Exception as e:
-            print(f"❌ Error getting all tags: {e}")
+            print(f"Error getting all tags: {e}")
             return []
     
     @classmethod
@@ -137,7 +140,7 @@ class Tag(BaseModel):
             return tags
             
         except Exception as e:
-            print(f"❌ Error getting popular tags: {e}")
+            print(f"Error getting popular tags: {e}")
             return []
     
     @classmethod
@@ -169,11 +172,11 @@ class Tag(BaseModel):
             tag.tagname = tag_name
             tag.recipe_count = 0
             
-            print(f"✅ Tag created: {tag_name} with ID: {tag_id}")
+            print(f"Tag created: {tag_name} with ID: {tag_id}")
             return tag
             
         except Exception as e:
-            print(f"❌ Error creating tag: {e}")
+            print(f"Error creating tag: {e}")
             return None
     
     def _get_recipe_count(self) -> int:
@@ -189,10 +192,10 @@ class Tag(BaseModel):
             return count or 0
             
         except Exception as e:
-            print(f"❌ Error getting recipe count for tag: {e}")
+            print(f"Error getting recipe count for tag: {e}")
             return 0
     
-    def get_recipes(self, limit: int = 20) -> List[Recipe]:
+    def get_recipes(self, limit: int = 20):
         """
         Get all recipes with this tag
         
@@ -206,6 +209,9 @@ class Tag(BaseModel):
             return []
         
         try:
+            # Import Recipe only when needed to avoid circular import
+            from .recipe import Recipe
+            
             result = execute_query(
                 """SELECT r.*, u.Username as AuthorUsername
                    FROM Recipes r
@@ -225,5 +231,5 @@ class Tag(BaseModel):
             return recipes
             
         except Exception as e:
-            print(f"❌ Error getting recipes for tag: {e}")
+            print(f"Error getting recipes for tag: {e}")
             return []
