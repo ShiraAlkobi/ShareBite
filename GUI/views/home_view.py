@@ -785,16 +785,24 @@ class HomeView(QWidget):
         """Display user statistics"""
         self.stats_widget.update_stats(stats)
     
-    def update_recipe_like_status(self, recipe_id: int, is_liked: bool):
-        """Update like status for specific recipe card"""
+    def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
+        """Update like status for specific recipe card with optional likes count"""
         if recipe_id in self.recipe_cards:
             card = self.recipe_cards[recipe_id]
-            likes_count = card.recipe.likes_count
-            if is_liked and not card.recipe.is_liked:
-                likes_count += 1
-            elif not is_liked and card.recipe.is_liked:
-                likes_count = max(0, likes_count - 1)
+            
+            # If likes_count not provided, calculate it
+            if likes_count is None:
+                current_count = card.recipe.likes_count
+                if is_liked and not card.recipe.is_liked:
+                    likes_count = current_count + 1
+                elif not is_liked and card.recipe.is_liked:
+                    likes_count = max(0, current_count - 1)
+                else:
+                    likes_count = current_count
+            
             card.update_like_status(is_liked, likes_count)
+        else:
+            print(f"Recipe card {recipe_id} not found for like update")
     
     def update_recipe_favorite_status(self, recipe_id: int, is_favorited: bool):
         """Update favorite status for specific recipe card"""
@@ -902,3 +910,85 @@ class HomeView(QWidget):
             x = (self.width() - self.loading_label.width()) // 2
             y = (self.height() - self.loading_label.height()) // 2
             self.loading_label.move(x, y)
+
+    def show_temporary_message(self, message: str, duration: int = 3000, is_error: bool = False):
+        """
+        Show a temporary message to the user (toast-style notification)
+        
+        Args:
+            message: Message to display
+            duration: How long to show message (milliseconds)  
+            is_error: Whether this is an error message (affects styling)
+        """
+        try:
+            # Create temporary message label if it doesn't exist
+            if not hasattr(self, 'temp_message_label'):
+                self.temp_message_label = QLabel(self)
+                self.temp_message_label.setAlignment(Qt.AlignCenter)
+                self.temp_message_label.hide()
+                self.temp_message_label.setWordWrap(True)
+            
+            # Set message and styling
+            self.temp_message_label.setText(message)
+            if is_error:
+                self.temp_message_label.setStyleSheet("""
+                    QLabel {
+                        background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                            stop: 0 #FFE4E1,
+                            stop: 1 #FFC0CB);
+                        color: #8B0000;
+                        font-size: 14px;
+                        font-weight: 600;
+                        font-family: 'Georgia', serif;
+                        padding: 15px;
+                        border: 2px solid #DC143C;
+                        border-radius: 10px;
+                        max-width: 400px;
+                    }
+                """)
+            else:
+                self.temp_message_label.setStyleSheet("""
+                    QLabel {
+                        background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                            stop: 0 #F0FFF0,
+                            stop: 1 #E6FFE6);
+                        color: #006400;
+                        font-size: 14px;
+                        font-weight: 600;
+                        font-family: 'Georgia', serif;
+                        padding: 15px;
+                        border: 2px solid #32CD32;
+                        border-radius: 10px;
+                        max-width: 400px;
+                    }
+                """)
+            
+            # Position the message (center-bottom of the view)
+            self.temp_message_label.adjustSize()
+            parent_rect = self.rect()
+            label_rect = self.temp_message_label.rect()
+            x = (parent_rect.width() - label_rect.width()) // 2
+            y = parent_rect.height() - label_rect.height() - 50  # 50px from bottom
+            self.temp_message_label.move(x, y)
+            
+            # Show the message
+            self.temp_message_label.show()
+            self.temp_message_label.raise_()
+            
+            # Set timer to hide message
+            if not hasattr(self, 'temp_message_timer'):
+                self.temp_message_timer = QTimer()
+                self.temp_message_timer.timeout.connect(self._hide_temporary_message)
+            
+            self.temp_message_timer.stop()
+            self.temp_message_timer.start(duration)
+            
+        except Exception as e:
+            print(f"Error showing temporary message: {e}")
+
+    def _hide_temporary_message(self):
+        """Hide the temporary message"""
+        if hasattr(self, 'temp_message_label'):
+            self.temp_message_label.hide()
+        if hasattr(self, 'temp_message_timer'):
+            self.temp_message_timer.stop()

@@ -4,6 +4,9 @@ import json
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
 from datetime import datetime
+from PySide6.QtCore import QThread, QObject, Signal
+import requests
+
 
 @dataclass
 class RecipeData:
@@ -41,7 +44,7 @@ class HomeModel(QObject):
     # Signals for communication with Presenter
     recipes_loaded = Signal(list)  # List[RecipeData]
     recipes_load_failed = Signal(str)  # error_message
-    user_stats_loaded = Signal(UserStatsData)  # user_stats
+    # user_stats_loaded = Signal(UserStatsData)  # user_stats
     recipe_liked = Signal(int, bool)  # recipe_id, is_liked
     recipe_favorited = Signal(int, bool)  # recipe_id, is_favorited
     search_results_loaded = Signal(list)  # List[RecipeData]
@@ -61,7 +64,7 @@ class HomeModel(QObject):
         
         # Cache
         self.current_recipes: List[RecipeData] = []
-        self.current_user_stats: Optional[UserStatsData] = None
+        # self.current_user_stats: Optional[UserStatsData] = None
         
         # Request timeout
         self.timeout = 30  # seconds
@@ -95,24 +98,25 @@ class HomeModel(QObject):
             print(f"Auth test error: {e}")
             return False
     
-    def load_recipe_feed(self, limit: int = 5, offset: int = 0) -> None:
-        """
-        Load recipe feed from API
-        
-        Args:
-            limit (int): Number of recipes to fetch
-            offset (int): Number of recipes to skip (for pagination)
-        """
+    def load_recipe_feed(self, limit: int = 20, offset: int = 0, force_refresh: bool = False) -> None:
+        """Load recipe feed from API"""
         try:
-            print(f"🍳 Loading recipe feed (limit: {limit}, offset: {offset})")
+            print(f"ðŸ³ Loading recipe feed (limit: {limit}, offset: {offset}, force: {force_refresh})")
+            
+            # ×”×•×¡×£ ×¤×¨×ž×˜×¨ force_refresh ×œ×‘×§×©×”
+            params = {
+                "limit": limit, 
+                "offset": offset,
+                "force_refresh": force_refresh
+            }
             
             response = self.session.get(
                 f"{self.base_url}/api/v1/recipes",
-                params={"limit": limit, "offset": offset},
+                params=params,
                 timeout=self.timeout
             )
             
-            print(f"📡 Recipe feed response: {response.status_code}")
+            print(f"ðŸ“¡ Recipe feed response: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -139,7 +143,7 @@ class HomeModel(QObject):
                 
                 self.current_recipes = recipes
                 self.recipes_loaded.emit(recipes)
-                print(f"✅ Loaded {len(recipes)} recipes")
+                print(f"âœ… Loaded {len(recipes)} recipes")
                 
             else:
                 error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
@@ -164,7 +168,7 @@ class HomeModel(QObject):
             filters (dict): Additional filters like cuisine, difficulty, etc.
         """
         try:
-            print(f"🔍 Searching recipes: '{query}'")
+            print(f"ðŸ” Searching recipes: '{query}'")
             
             params = {"q": query}
             if filters:
@@ -176,7 +180,7 @@ class HomeModel(QObject):
                 timeout=self.timeout
             )
             
-            print(f"📡 Search response: {response.status_code}")
+            print(f"ðŸ“¡ Search response: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -202,7 +206,7 @@ class HomeModel(QObject):
                     recipes.append(recipe)
                 
                 self.search_results_loaded.emit(recipes)
-                print(f"✅ Found {len(recipes)} recipes matching '{query}'")
+                print(f"âœ… Found {len(recipes)} recipes matching '{query}'")
                 
             else:
                 error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
@@ -214,38 +218,38 @@ class HomeModel(QObject):
         except Exception as e:
             self.recipes_load_failed.emit(f"Search error: {str(e)}")
     
-    def load_user_stats(self) -> None:
-        """Load current user statistics"""
-        try:
-            print("📊 Loading user statistics")
+    # def load_user_stats(self) -> None:
+    #     """Load current user statistics"""
+    #     try:
+    #         print("ðŸ“Š Loading user statistics")
             
-            response = self.session.get(
-                f"{self.base_url}/api/v1/recipes/user/stats",
-                timeout=self.timeout
-            )
+    #         response = self.session.get(
+    #             f"{self.base_url}/api/v1/recipes/user/stats",
+    #             timeout=self.timeout
+    #         )
             
-            print(f"📡 User stats response: {response.status_code}")
+    #         print(f"ðŸ“¡ User stats response: {response.status_code}")
             
-            if response.status_code == 200:
-                data = response.json()
+    #         if response.status_code == 200:
+    #             data = response.json()
                 
-                stats = UserStatsData(
-                    recipes_created=data.get("recipes_created", 0),
-                    total_likes_received=data.get("total_likes_received", 0),
-                    total_favorites_received=data.get("total_favorites_received", 0),
-                    recipes_liked=data.get("recipes_liked", 0),
-                    recipes_favorited=data.get("recipes_favorited", 0)
-                )
+    #             stats = UserStatsData(
+    #                 recipes_created=data.get("recipes_created", 0),
+    #                 total_likes_received=data.get("total_likes_received", 0),
+    #                 total_favorites_received=data.get("total_favorites_received", 0),
+    #                 recipes_liked=data.get("recipes_liked", 0),
+    #                 recipes_favorited=data.get("recipes_favorited", 0)
+    #             )
                 
-                self.current_user_stats = stats
-                self.user_stats_loaded.emit(stats)
-                print(f"✅ Loaded user stats: {stats}")
+    #             self.current_user_stats = stats
+    #             self.user_stats_loaded.emit(stats)
+    #             print(f"âœ… Loaded user stats: {stats}")
                 
-            else:
-                print(f"❌ Failed to load user stats: {response.status_code}")
+    #         else:
+    #             print(f"âŒ Failed to load user stats: {response.status_code}")
                 
-        except Exception as e:
-            print(f"❌ Error loading user stats: {e}")
+    #     except Exception as e:
+    #         print(f"âŒ Error loading user stats: {e}")
     
     def toggle_like_recipe(self, recipe_id: int) -> None:
         """
@@ -255,14 +259,14 @@ class HomeModel(QObject):
             recipe_id (int): Recipe ID to like/unlike
         """
         try:
-            print(f"❤️ Toggling like for recipe {recipe_id}")
+            print(f"â¤ï¸ Toggling like for recipe {recipe_id}")
             
             response = self.session.post(
                 f"{self.base_url}/api/v1/recipes/{recipe_id}/like",
                 timeout=self.timeout
             )
             
-            print(f"📡 Like toggle response: {response.status_code}")
+            print(f"ðŸ“¡ Like toggle response: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -279,7 +283,7 @@ class HomeModel(QObject):
                         break
                 
                 self.recipe_liked.emit(recipe_id, is_liked)
-                print(f"✅ Recipe {recipe_id} {'liked' if is_liked else 'unliked'}")
+                print(f"âœ… Recipe {recipe_id} {'liked' if is_liked else 'unliked'}")
                 
             else:
                 error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
@@ -297,14 +301,14 @@ class HomeModel(QObject):
             recipe_id (int): Recipe ID to favorite/unfavorite
         """
         try:
-            print(f"⭐ Toggling favorite for recipe {recipe_id}")
+            print(f"â­ Toggling favorite for recipe {recipe_id}")
             
             response = self.session.post(
                 f"{self.base_url}/api/v1/recipes/{recipe_id}/favorite",
                 timeout=self.timeout
             )
             
-            print(f"📡 Favorite toggle response: {response.status_code}")
+            print(f"ðŸ“¡ Favorite toggle response: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
@@ -317,7 +321,7 @@ class HomeModel(QObject):
                         break
                 
                 self.recipe_favorited.emit(recipe_id, is_favorited)
-                print(f"✅ Recipe {recipe_id} {'favorited' if is_favorited else 'unfavorited'}")
+                print(f"âœ… Recipe {recipe_id} {'favorited' if is_favorited else 'unfavorited'}")
                 
             else:
                 error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
@@ -334,7 +338,146 @@ class HomeModel(QObject):
     def get_cached_recipes(self) -> List[RecipeData]:
         """Get currently cached recipes"""
         return self.current_recipes.copy()
+    # Add these methods to your existing HomeModel class:
+    def toggle_like_recipe_optimistic(self, recipe_id: int, success_callback=None, error_callback=None):
+        """
+        Toggle like status with callbacks for optimistic updates
+        Runs in background thread to avoid blocking UI
+        """
+        print(f"Starting async like toggle for recipe {recipe_id}")
+        
+        # Create worker and thread
+        self.like_thread = QThread()
+        self.like_worker = AsyncLikeWorker(self, recipe_id)
+        
+        # Move worker to thread
+        self.like_worker.moveToThread(self.like_thread)
+        
+        # Connect signals
+        if success_callback:
+            self.like_worker.like_success.connect(success_callback)
+        if error_callback:
+            self.like_worker.like_failed.connect(error_callback)
+        
+        # Connect thread lifecycle
+        self.like_thread.started.connect(self.like_worker.do_like_toggle)
+        self.like_worker.like_success.connect(self.like_thread.quit)
+        self.like_worker.like_failed.connect(self.like_thread.quit)
+        self.like_thread.finished.connect(self.like_worker.deleteLater)
+        self.like_thread.finished.connect(self.like_thread.deleteLater)
+        
+        # Also emit original signals for backward compatibility
+        self.like_worker.like_success.connect(self.recipe_liked.emit)
+        self.like_worker.like_failed.connect(self.recipes_load_failed.emit)
+        
+        # Start the thread
+        self.like_thread.start()
+
+    def toggle_favorite_recipe_optimistic(self, recipe_id: int, success_callback=None, error_callback=None):
+        """
+        Toggle favorite status with callbacks for optimistic updates
+        Runs in background thread to avoid blocking UI
+        """
+        print(f"Starting async favorite toggle for recipe {recipe_id}")
+        
+        # Create worker and thread
+        self.favorite_thread = QThread()
+        self.favorite_worker = AsyncFavoriteWorker(self, recipe_id)
+        
+        # Move worker to thread
+        self.favorite_worker.moveToThread(self.favorite_thread)
+        
+        # Connect signals
+        if success_callback:
+            self.favorite_worker.favorite_success.connect(success_callback)
+        if error_callback:
+            self.favorite_worker.favorite_failed.connect(error_callback)
+        
+        # Connect thread lifecycle
+        self.favorite_thread.started.connect(self.favorite_worker.do_favorite_toggle)
+        self.favorite_worker.favorite_success.connect(self.favorite_thread.quit)
+        self.favorite_worker.favorite_failed.connect(self.favorite_thread.quit)
+        self.favorite_thread.finished.connect(self.favorite_worker.deleteLater)
+        self.favorite_thread.finished.connect(self.favorite_thread.deleteLater)
+        
+        # Also emit original signals for backward compatibility
+        self.favorite_worker.favorite_success.connect(self.recipe_favorited.emit)
+        self.favorite_worker.favorite_failed.connect(self.recipes_load_failed.emit)
+        
+        # Start the thread
+        self.favorite_thread.start()
+
+class AsyncLikeWorker(QObject):
+    """Worker thread for async like operations"""
+    like_success = Signal(int, bool)  # recipe_id, is_liked
+    like_failed = Signal(str)  # error_message
     
-    def get_cached_user_stats(self) -> Optional[UserStatsData]:
-        """Get currently cached user stats"""
-        return self.current_user_stats
+    def __init__(self, model, recipe_id):
+        super().__init__()
+        self.model = model
+        self.recipe_id = recipe_id
+    
+    def do_like_toggle(self):
+        """Perform the actual like toggle request"""
+        try:
+            print(f"Sending like request for recipe {self.recipe_id}")
+            response = self.model.session.post(
+                f"{self.model.base_url}/api/v1/recipes/{self.recipe_id}/like",
+                timeout=self.model.timeout
+            )
+            
+            print(f"Like response: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                is_liked = data.get("is_liked", False)
+                self.like_success.emit(self.recipe_id, is_liked)
+            else:
+                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+                error_message = error_data.get("detail", f"Server error: {response.status_code}")
+                self.like_failed.emit(error_message)
+                
+        except requests.exceptions.Timeout:
+            self.like_failed.emit("Request timed out")
+        except requests.exceptions.ConnectionError:
+            self.like_failed.emit("Connection error")
+        except Exception as e:
+            self.like_failed.emit(f"Network error: {str(e)}")
+
+class AsyncFavoriteWorker(QObject):
+    """Worker thread for async favorite operations"""
+    favorite_success = Signal(int, bool)  # recipe_id, is_favorited
+    favorite_failed = Signal(str)  # error_message
+    
+    def __init__(self, model, recipe_id):
+        super().__init__()
+        self.model = model
+        self.recipe_id = recipe_id
+    
+    def do_favorite_toggle(self):
+        """Perform the actual favorite toggle request"""
+        try:
+            print(f"Sending favorite request for recipe {self.recipe_id}")
+            response = self.model.session.post(
+                f"{self.model.base_url}/api/v1/recipes/{self.recipe_id}/favorite",
+                timeout=self.model.timeout
+            )
+            
+            print(f"Favorite response: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                is_favorited = data.get("is_favorited", False)
+                self.favorite_success.emit(self.recipe_id, is_favorited)
+            else:
+                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
+                error_message = error_data.get("detail", f"Server error: {response.status_code}")
+                self.favorite_failed.emit(error_message)
+                
+        except requests.exceptions.Timeout:
+            self.favorite_failed.emit("Request timed out")
+        except requests.exceptions.ConnectionError:
+            self.favorite_failed.emit("Connection error")
+        except Exception as e:
+            self.favorite_failed.emit(f"Network error: {str(e)}")
+

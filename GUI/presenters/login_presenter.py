@@ -41,6 +41,10 @@ class LoginPresenter(QObject):
         """Connect view signals to presenter methods"""
         self.view.login_requested.connect(self.handle_login_request)
         self.view.register_requested.connect(self.handle_register_request)
+
+    def get_view(self):
+        """Return the QWidget of the home view"""
+        return self.view
     
     def handle_login_request(self, username: str, password: str):
         """
