@@ -17,7 +17,7 @@ from recipe_routes import router as recipe_router
 async def lifespan(app: FastAPI):
     """
     Application lifecycle management
-    - Startup: Test database connection
+    - Startup: Test database  connection
     - Shutdown: Clean up resources
     """
     print("🚀 Starting Recipe Sharing Platform Backend...")

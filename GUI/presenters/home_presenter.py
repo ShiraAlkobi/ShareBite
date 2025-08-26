@@ -72,11 +72,11 @@ class HomePresenter(QObject):
         
         # Set loading state
         self.is_loading = True
-        self.view.set_loading_state(True)
+        # self.view.set_loading_state(True)
         
         # Load recipe feed and user stats
         self.model.load_recipe_feed()
-        self.model.load_user_stats()
+        # self.model.load_user_stats()
     
     def handle_search_request(self, query: str, filters: Dict[str, Any]):
         """
@@ -270,6 +270,11 @@ class HomePresenter(QObject):
         self.view.show()
         self.view.raise_()
         self.view.activateWindow()
+    
+    def get_view(self):
+        """Return the QWidget of the home view"""
+        return self.view
+
     
     def hide_view(self):
         """Hide the home view"""

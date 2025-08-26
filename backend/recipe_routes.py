@@ -253,55 +253,56 @@ async def search_recipes(
             detail=f"Failed to search recipes: {str(e)}"
         )
 
+# Import the CQRS commands and queries at the top of your file
+from commands.recipes_commands import ToggleLikeCommand
+from queries.recipes_queries import GetRecipeByIdQuery
+
 @router.post("/{recipe_id}/like")
 async def toggle_like_recipe(
     recipe_id: int,
     current_user: dict = Depends(verify_token)
 ):
     """
-    Toggle like status for a recipe using Recipe model
+    Toggle like status for a recipe using CQRS pattern
     """
     try:
         print(f"❤️ Toggling like for recipe {recipe_id} by user {current_user['username']}")
         
-        # Check if recipe exists using Recipe model
-        recipe = Recipe.get_by_id(recipe_id)
+        # Use Query to check if recipe exists
+        recipe_query = GetRecipeByIdQuery()
+        recipe = recipe_query.execute(recipe_id)
+        
         if not recipe:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Recipe not found"
             )
         
-        # Check if already liked
-        from database import execute_scalar, execute_non_query
-        existing_like = execute_scalar(
-            "SELECT 1 FROM Likes WHERE RecipeID = ? AND UserID = ?",
-            (recipe_id, current_user['userid'])
+        # Use Command to toggle like (includes all business logic + event logging)
+        like_command = ToggleLikeCommand()
+        result = like_command.execute(
+            user_id=current_user['userid'],
+            recipe_id=recipe_id
         )
         
-        if existing_like:
-            # Remove like
-            execute_non_query(
-                "DELETE FROM Likes WHERE RecipeID = ? AND UserID = ?",
-                (recipe_id, current_user['userid'])
-            )
-            is_liked = False
-            action = "unliked"
-        else:
-            # Add like
-            execute_non_query(
-                "INSERT INTO Likes (RecipeID, UserID) VALUES (?, ?)",
-                (recipe_id, current_user['userid'])
-            )
-            is_liked = True
-            action = "liked"
-        
+        # The command returns: {"is_liked": bool, "total_likes": int}
+        action = "liked" if result["is_liked"] else "unliked"
         print(f"✅ Recipe {recipe_id} {action} by user {current_user['username']}")
         
-        return {"is_liked": is_liked, "recipe_id": recipe_id}
+        return {
+            "is_liked": result["is_liked"],
+            "recipe_id": recipe_id,
+            "total_likes": result["total_likes"]
+        }
         
     except HTTPException:
         raise
+    except ValueError as e:
+        # Command validation errors
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
     except Exception as e:
         print(f"❌ Error toggling like: {e}")
         import traceback

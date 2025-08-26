@@ -27,9 +27,12 @@ class MainWindow(QMainWindow):
         self.setup_authentication()
     
     def setup_ui(self):
+        self.show()
         """Setup main window UI"""
         self.setWindowTitle("Recipe Share Platform")
-        self.setMinimumSize(1200, 800)
+        self.setMinimumSize(300, 300)
+        self.stack = QStackedWidget()
+        self.setCentralWidget(self.stack)
         
         # Main content will be managed by individual presenters
         # No central widget needed since each view is a separate window
@@ -43,13 +46,20 @@ class MainWindow(QMainWindow):
         self.login_presenter.authentication_successful.connect(self.on_authentication_success)
         self.login_presenter.authentication_failed.connect(self.on_authentication_failed)
         
-        # Show login view initially
+        # Show login view iniftially
         self.show_login()
     
     def show_login(self):
         """Show login microfrontend"""
-        self.login_presenter.show_view()
-        self.hide()  # Hide main window while logging in
+        # self.login_presenter.show_view()
+        login_widget = self.login_presenter.get_view()
+
+        if self.stack.indexOf(login_widget) == -1:
+            self.stack.addWidget(login_widget)
+
+        self.stack.setCurrentWidget(login_widget)
+
+        # self.hide()  # Hide main window while logging in
     
     def on_authentication_success(self, user_data: UserData, access_token: str):
         """
@@ -101,7 +111,13 @@ class MainWindow(QMainWindow):
         self.home_presenter.logout_requested.connect(self.handle_logout)
         
         # Show home view
-        self.home_presenter.show_view()
+        # self.home_presenter.show_view()
+        home_widget = self.home_presenter.get_view()
+
+        if self.stack.indexOf(home_widget) == -1:
+            self.stack.addWidget(home_widget)
+
+        self.stack.setCurrentWidget(home_widget)
         
         # Update window title
         self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
@@ -168,7 +184,10 @@ class MainWindow(QMainWindow):
 def main():
     """Main application entry point"""
     app = QApplication(sys.argv)
-    
+
+    with open("GUI\\theme.qss", "r", encoding="utf-8") as f:
+        app.setStyleSheet(f.read())
+
     # Set application properties
     app.setApplicationName("Recipe Share")
     app.setApplicationVersion("1.0.0")
