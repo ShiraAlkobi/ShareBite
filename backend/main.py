@@ -195,3 +195,11 @@ if __name__ == "__main__":
         reload=True,  # Auto-reload on code changes
         log_level="info"
     )
+
+# from chat_routes import router as chat_router
+
+# app.include_router(
+#     chat_router,
+#     prefix="/api/v1",
+#     tags=["Chat"]
+# )

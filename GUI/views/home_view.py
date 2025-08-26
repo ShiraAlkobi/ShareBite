@@ -570,54 +570,71 @@ class HomeView(QWidget):
             self.loading_timer.stop()
     
     def show_error_message(self, message: str):
-        """Show modern error message"""
-        error_container = self.create_notification("❌ Error", message, "ErrorNotification")
-        self.show_notification(error_container, 5000)
+        """Show error message to user"""
+        error_label = QLabel(f"Error: {message}")
+        error_label.setAlignment(Qt.AlignCenter)
+        error_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 #FFE4E1,
+                    stop: 1 #FFC0CB);
+                color: #8B0000;
+                font-size: 14px;
+                font-weight: 600;
+                font-family: 'Georgia', serif;
+                padding: 15px;
+                border: 2px solid #DC143C;
+                border-radius: 10px;
+                margin: 10px;
+            }
+        """)
+        
+        # Add to top of recipe area temporarily
+        self.recipe_layout.addWidget(error_label, 0, 0, 1, 3)
+        
+        # Auto-remove after 5 seconds
+        QTimer.singleShot(5000, lambda: (
+            self.recipe_layout.removeWidget(error_label),
+            error_label.deleteLater()
+        ))
     
     def show_success_message(self, message: str):
-        """Show modern success message"""
-        success_container = self.create_notification("✅ Success", message, "SuccessNotification")
-        self.show_notification(success_container, 3000)
-    
-    def create_notification(self, title: str, message: str, object_name: str) -> QFrame:
-        """Create modern notification widget"""
-        notification = QFrame()
-        notification.setObjectName(object_name)
+        """Show success message to user"""
+        success_label = QLabel(message)
+        success_label.setAlignment(Qt.AlignCenter)
+        success_label.setStyleSheet("""
+            QLabel {
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 #F0FFF0,
+                    stop: 1 #E6FFE6);
+                color: #006400;
+                font-size: 14px;
+                font-weight: 600;
+                font-family: 'Georgia', serif;
+                padding: 15px;
+                border: 2px solid #32CD32;
+                border-radius: 10px;
+                margin: 10px;
+            }
+        """)
         
-        layout = QHBoxLayout(notification)
-        layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(12)
+        # Add to top of recipe area temporarily
+        self.recipe_layout.addWidget(success_label, 0, 0, 1, 3)
         
-        title_label = QLabel(title)
-        title_label.setObjectName("NotificationTitle")
-        
-        message_label = QLabel(message)
-        message_label.setObjectName("NotificationMessage")
-        
-        layout.addWidget(title_label)
-        layout.addWidget(message_label)
-        layout.addStretch()
-        
-        return notification
-    
-    def show_notification(self, notification: QFrame, duration: int):
-        """Show notification temporarily"""
-        self.recipe_layout.addWidget(notification, 0, 0, 1, 4)
-        
-        QTimer.singleShot(duration, lambda: (
-            self.recipe_layout.removeWidget(notification),
-            notification.deleteLater()
+        # Auto-remove after 3 seconds
+        QTimer.singleShot(3000, lambda: (
+            self.recipe_layout.removeWidget(success_label),
+            success_label.deleteLater()
         ))
     
     def resizeEvent(self, event):
-        """Handle window resize for responsive layout"""
+        """Handle window resize to position loading overlay"""
         super().resizeEvent(event)
-        
-        if hasattr(self, 'loading_indicator'):
-            # Center loading indicator
-            x = (self.width() - self.loading_indicator.width()) // 2
-            y = (self.height() - self.loading_indicator.height()) // 2
-            self.loading_indicator.move(x, y)
+        if hasattr(self, 'loading_label'):
+            # Center loading label
+            x = (self.width() - self.loading_label.width()) // 2
+            y = (self.height() - self.loading_label.height()) // 2
+            self.loading_label.move(x, y)
 
     def show_temporary_message(self, message: str, duration: int = 3000, is_error: bool = False):
         """
