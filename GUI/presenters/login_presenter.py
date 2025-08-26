@@ -181,6 +181,11 @@ class LoginPresenter(QObject):
         self.view.raise_()
         self.view.activateWindow()
     
+    def get_view(self):
+        """Return the QWidget of the home view"""
+        return self.view
+
+    
     def hide_view(self):
         """Hide the login view"""
         self.view.hide()

@@ -340,7 +340,11 @@ async def toggle_like_recipe(recipe_id: int, current_user: dict = Depends(verify
         # Update cache
         cache.update_like_status(recipe_id, user_id, is_liked)
         
-        return {"is_liked": is_liked, "recipe_id": recipe_id}
+        return {
+            "is_liked": result["is_liked"],
+            "recipe_id": recipe_id,
+            "total_likes": result["total_likes"]
+        }
         
     except HTTPException:
         raise

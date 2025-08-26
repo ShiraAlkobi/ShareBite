@@ -19,221 +19,105 @@ class RecipeCard(QFrame):
     def __init__(self, recipe: RecipeData, parent=None):
         super().__init__(parent)
         self.recipe = recipe
+        self.setObjectName("RecipeCard")
         self.setup_ui()
-    
+
     def setup_ui(self):
-        """Setup recipe card UI with simplified layout"""
-        self.setFixedSize(300, 280)
-        self.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FFFEF7,
-                    stop: 0.05 #FFF8E1,
-                    stop: 1 #F5F5DC);
-                border: 2px solid #D4AF37;
-                border-radius: 12px;
-            }
-            QFrame:hover {
-                border: 2px solid #B8860B;
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FFFFFF,
-                    stop: 1 #FFF8DC);
-            }
-        """)
-        
-        # Add shadow
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(15)
-        shadow.setColor(QColor(139, 69, 19, 60))
-        shadow.setOffset(3, 5)
-        self.setGraphicsEffect(shadow)
-        
+        """Setup recipe card UI components"""
+        self.setFixedSize(300, 300)
+        self.setProperty("class", "recipe-card")
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Recipe image container
+        image_container = QFrame()
+        image_container.setObjectName("RecipeImageContainer")
+        image_container.setFixedHeight(180)
         
-        # Recipe image (placeholder for now)
-        image_frame = QFrame()
-        image_frame.setFixedHeight(120)
-        image_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 #FF6347,
-                    stop: 0.5 #FF4500,
-                    stop: 1 #DC143C);
-                border: 2px solid #8B4513;
-                border-radius: 8px;
-            }
-        """)
-        
-        image_layout = QVBoxLayout(image_frame)
+        image_layout = QVBoxLayout(image_container)
+        image_layout.setContentsMargins(0, 0, 0, 0)
+
         if self.recipe.image_url:
-            # TODO: Load actual image from URL
-            image_label = QLabel("📸 Recipe Image")
+            image_label = QLabel("🍽️")
+            image_label.setObjectName("RecipeImagePlaceholder")
         else:
-            image_label = QLabel("🍽️ No Image")
-            
+            image_label = QLabel("📸")
+            image_label.setObjectName("RecipeImagePlaceholder")
+        
         image_label.setAlignment(Qt.AlignCenter)
-        image_label.setStyleSheet("""
-            QLabel {
-                color: white;
-                font-size: 16px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-            }
-        """)
         image_layout.addWidget(image_label)
+
+        # Content container
+        content_container = QFrame()
+        content_container.setObjectName("RecipeContent")
         
-        # Dish name (recipe title)
+        content_layout = QVBoxLayout(content_container)
+        content_layout.setContentsMargins(20, 16, 20, 16)
+        content_layout.setSpacing(12)
+
+        # Recipe title
         self.title_label = QLabel(self.recipe.title)
+        self.title_label.setObjectName("RecipeTitle")
         self.title_label.setWordWrap(True)
-        self.title_label.setMaximumHeight(50)
-        self.title_label.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 18px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-                text-align: center;
-            }
-        """)
-        
-        # Author name
+
+        # Recipe metadata container
+        meta_container = QFrame()
+        meta_container.setObjectName("RecipeMetadata")
+        meta_layout = QVBoxLayout(meta_container)
+        meta_layout.setContentsMargins(0, 0, 0, 0)
+        meta_layout.setSpacing(4)
+
+        # Author
         author_label = QLabel(f"by Chef {self.recipe.author_name}")
-        author_label.setAlignment(Qt.AlignCenter)
-        author_label.setStyleSheet("""
-            QLabel {
-                color: #A0522D;
-                font-size: 14px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-                font-style: italic;
-            }
-        """)
+        author_label.setObjectName("RecipeAuthor")
+
+        # Date
+        date_label = QLabel(f"Created: {self.recipe.created_at or 'Date unknown'}")
+        date_label.setObjectName("RecipeDate")
+
+        meta_layout.addWidget(author_label)
+        meta_layout.addWidget(date_label)
+
+        # Actions container
+        actions_container = QFrame()
+        actions_container.setObjectName("RecipeActions")
         
-        # Date created
-        try:
-            # Parse the date and format it nicely
-            if self.recipe.created_at:
-                if isinstance(self.recipe.created_at, str):
-                    # Try to parse ISO format date
-                    from datetime import datetime
-                    try:
-                        date_obj = datetime.fromisoformat(self.recipe.created_at.replace('Z', '+00:00'))
-                        formatted_date = date_obj.strftime("%B %d, %Y")
-                    except:
-                        # If parsing fails, use the string as is
-                        formatted_date = self.recipe.created_at[:10]  # Just take YYYY-MM-DD part
-                else:
-                    formatted_date = str(self.recipe.created_at)[:10]
-            else:
-                formatted_date = "Date unknown"
-        except:
-            formatted_date = "Date unknown"
-            
-        date_label = QLabel(f"Created: {formatted_date}")
-        date_label.setAlignment(Qt.AlignCenter)
-        date_label.setStyleSheet("""
-            QLabel {
-                color: #CD853F;
-                font-size: 12px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-            }
-        """)
-        
-        # Action buttons row
-        actions_layout = QHBoxLayout()
+        actions_layout = QHBoxLayout(actions_container)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
         actions_layout.setSpacing(8)
-        
+
         # Like button
         self.like_button = QPushButton(f"♥ {self.recipe.likes_count}")
-        self.like_button.setFixedSize(70, 32)
-        like_color = "#DC143C" if self.recipe.is_liked else "#CD853F"
-        self.like_button.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent;
-                color: {like_color};
-                border: 1px solid {like_color};
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }}
-            QPushButton:hover {{
-                background: rgba(220, 20, 60, 0.1);
-                color: #DC143C;
-                border-color: #DC143C;
-            }}
-        """)
+        self.like_button.setObjectName("LikeButton")
+        self.like_button.setProperty("liked", str(self.recipe.is_liked).lower())
         self.like_button.clicked.connect(lambda: self.recipe_liked.emit(self.recipe.recipe_id))
-        
+
         # Favorite button
-        star_symbol = "★" if self.recipe.is_favorited else "☆"
-        self.favorite_button = QPushButton(star_symbol)
-        self.favorite_button.setFixedSize(32, 32)
-        fav_color = "#FFD700" if self.recipe.is_favorited else "#CD853F"
-        self.favorite_button.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent;
-                color: {fav_color};
-                border: 1px solid {fav_color};
-                border-radius: 6px;
-                font-size: 16px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background: rgba(255, 215, 0, 0.2);
-                color: #FFD700;
-                border-color: #FFD700;
-            }}
-        """)
+        self.favorite_button = QPushButton("★" if self.recipe.is_favorited else "☆")
+        self.favorite_button.setObjectName("FavoriteButton")
+        self.favorite_button.setProperty("favorited", str(self.recipe.is_favorited).lower())
         self.favorite_button.clicked.connect(lambda: self.recipe_favorited.emit(self.recipe.recipe_id))
-        
-        # View recipe button
+
+        # View button
         view_button = QPushButton("View Recipe")
-        view_button.setFixedHeight(32)
-        view_button.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #32CD32,
-                    stop: 1 #228B22);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #7FFF00,
-                    stop: 1 #32CD32);
-            }
-        """)
+        view_button.setObjectName("ViewRecipeButton")
         view_button.clicked.connect(lambda: self.recipe_clicked.emit(self.recipe.recipe_id))
-        
+
         actions_layout.addWidget(self.like_button)
         actions_layout.addWidget(self.favorite_button)
         actions_layout.addStretch()
         actions_layout.addWidget(view_button)
-        
-        # Add all widgets to main layout
-        layout.addWidget(image_frame)
-        layout.addSpacing(5)
-        layout.addWidget(self.title_label)
-        layout.addWidget(author_label)
-        layout.addWidget(date_label)
-        layout.addSpacing(8)
-        layout.addLayout(actions_layout)
+
+        # Add all containers to main layout
+        content_layout.addWidget(self.title_label)
+        content_layout.addWidget(meta_container)
+        content_layout.addStretch()
+        content_layout.addWidget(actions_container)
+
+        layout.addWidget(image_container)
+        layout.addWidget(content_container)
     
     def update_like_status(self, is_liked: bool, likes_count: int):
         """Update like button status"""
@@ -241,23 +125,9 @@ class RecipeCard(QFrame):
         self.recipe.likes_count = likes_count
         
         self.like_button.setText(f"♥ {likes_count}")
-        like_color = "#DC143C" if is_liked else "#CD853F"
-        self.like_button.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent;
-                color: {like_color};
-                border: 1px solid {like_color};
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }}
-            QPushButton:hover {{
-                background: rgba(220, 20, 60, 0.1);
-                color: #DC143C;
-                border-color: #DC143C;
-            }}
-        """)
+        self.like_button.setProperty("liked", str(is_liked).lower())
+        self.like_button.style().unpolish(self.like_button)
+        self.like_button.style().polish(self.like_button)
     
     def update_favorite_status(self, is_favorited: bool):
         """Update favorite button status"""
@@ -265,122 +135,60 @@ class RecipeCard(QFrame):
         
         star_symbol = "★" if is_favorited else "☆"
         self.favorite_button.setText(star_symbol)
-        fav_color = "#FFD700" if is_favorited else "#CD853F"
-        self.favorite_button.setStyleSheet(f"""
-            QPushButton {{
-                background: transparent;
-                color: {fav_color};
-                border: 1px solid {fav_color};
-                border-radius: 6px;
-                font-size: 16px;
-                font-weight: 600;
-            }}
-            QPushButton:hover {{
-                background: rgba(255, 215, 0, 0.2);
-                color: #FFD700;
-                border-color: #FFD700;
-            }}
-        """)
+        self.favorite_button.setProperty("favorited", str(is_favorited).lower())
+        self.favorite_button.style().unpolish(self.favorite_button)
+        self.favorite_button.style().polish(self.favorite_button)
 
 class SearchBar(QFrame):
-    """Search bar widget"""
+    """Modern search bar widget with filters"""
     
     search_requested = Signal(str, dict)  # query, filters
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("SearchBar")
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup search bar UI"""
-        self.setFixedHeight(60)
-        self.setStyleSheet("""
-            QFrame {
-                background: rgba(255, 255, 255, 0.8);
-                border: 2px solid #D4AF37;
-                border-radius: 15px;
-            }
-        """)
+        """Setup search bar UI components"""
+        self.setFixedHeight(70)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 10, 20, 10)
-        layout.setSpacing(15)
+        layout.setContentsMargins(24, 16, 24, 16)
+        layout.setSpacing(16)
+        
+        # Search icon and input container
+        search_container = QFrame()
+        search_container.setObjectName("SearchContainer")
+        
+        search_layout = QHBoxLayout(search_container)
+        search_layout.setContentsMargins(16, 0, 16, 0)
+        search_layout.setSpacing(12)
+        
+        # Search icon
+        search_icon = QLabel("🔍")
+        search_icon.setObjectName("SearchIcon")
         
         # Search input
         self.search_input = QLineEdit()
+        self.search_input.setObjectName("SearchInput")
         self.search_input.setPlaceholderText("Search for delicious recipes...")
-        self.search_input.setFixedHeight(35)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background: #FFFFFF;
-                border: 2px solid #CD853F;
-                border-radius: 8px;
-                padding: 0 12px;
-                font-size: 14px;
-                color: #8B4513;
-                font-family: 'Georgia', serif;
-            }
-            QLineEdit:focus {
-                border: 2px solid #D2691E;
-                background: #FFF8DC;
-            }
-            QLineEdit::placeholder {
-                color: rgba(139, 69, 19, 0.6);
-                font-style: italic;
-            }
-        """)
         self.search_input.returnPressed.connect(self.perform_search)
+        
+        search_layout.addWidget(search_icon)
+        search_layout.addWidget(self.search_input)
         
         # Filter dropdown
         self.filter_combo = QComboBox()
-        self.filter_combo.setFixedSize(120, 35)
+        self.filter_combo.setObjectName("FilterCombo")
         self.filter_combo.addItems(["All Recipes", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"])
-        self.filter_combo.setStyleSheet("""
-            QComboBox {
-                background: #FFFFFF;
-                border: 2px solid #CD853F;
-                border-radius: 8px;
-                padding: 0 8px;
-                font-size: 12px;
-                color: #8B4513;
-                font-family: 'Georgia', serif;
-            }
-            QComboBox:focus {
-                border: 2px solid #D2691E;
-            }
-            QComboBox::drop-down {
-                border: none;
-            }
-            QComboBox::down-arrow {
-                width: 12px;
-                height: 12px;
-            }
-        """)
         
         # Search button
         search_button = QPushButton("Find Recipes")
-        search_button.setFixedSize(100, 35)
-        search_button.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FF6347,
-                    stop: 1 #DC143C);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 12px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FF7F50,
-                    stop: 1 #FF6347);
-            }
-        """)
+        search_button.setObjectName("SearchButton")
         search_button.clicked.connect(self.perform_search)
         
-        layout.addWidget(self.search_input)
+        layout.addWidget(search_container)
         layout.addWidget(self.filter_combo)
         layout.addWidget(search_button)
     
@@ -396,79 +204,67 @@ class SearchBar(QFrame):
         self.search_requested.emit(query, filters)
 
 class UserStatsWidget(QFrame):
-    """User statistics display widget"""
+    """Modern user statistics display widget"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("UserStatsWidget")
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup user stats UI"""
-        self.setFixedHeight(100)
-        self.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 rgba(139, 69, 19, 0.8),
-                    stop: 1 rgba(210, 105, 30, 0.8));
-                border: 2px solid #8B4513;
-                border-radius: 12px;
-            }
-        """)
+        """Setup user stats UI components"""
+        self.setFixedHeight(120)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 15, 20, 15)
-        layout.setSpacing(30)
+        layout.setContentsMargins(32, 20, 32, 20)
+        layout.setSpacing(40)
         
         # Stats containers
-        self.recipes_stat = self.create_stat_widget("Recipes Created", "0")
-        self.likes_stat = self.create_stat_widget("Likes Received", "0")
-        self.favorites_stat = self.create_stat_widget("Total Favorites", "0")
+        self.recipes_stat = self.create_stat_widget("Recipes Created", "0", "📝")
+        self.likes_stat = self.create_stat_widget("Likes Received", "0", "♥")
+        self.favorites_stat = self.create_stat_widget("Total Favorites", "0", "⭐")
         
         layout.addWidget(self.recipes_stat)
         layout.addWidget(self.likes_stat)
         layout.addWidget(self.favorites_stat)
         layout.addStretch()
     
-    def create_stat_widget(self, label: str, value: str) -> QWidget:
-        """Create individual stat widget"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        layout.setSpacing(2)
+    def create_stat_widget(self, label: str, value: str, icon: str) -> QWidget:
+        """Create individual stat widget with modern design"""
+        container = QFrame()
+        container.setObjectName("StatContainer")
+        
+        layout = QVBoxLayout(container)
+        layout.setSpacing(8)
         layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(24, 16, 24, 16)
+        
+        # Icon and value container
+        top_container = QHBoxLayout()
+        top_container.setSpacing(12)
+        top_container.setAlignment(Qt.AlignCenter)
+        
+        icon_label = QLabel(icon)
+        icon_label.setObjectName("StatIcon")
         
         value_label = QLabel(value)
-        value_label.setAlignment(Qt.AlignCenter)
-        value_label.setStyleSheet("""
-            QLabel {
-                color: #FFFFFF;
-                font-size: 24px;
-                font-weight: 800;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-            }
-        """)
+        value_label.setObjectName("StatValue")
         
+        top_container.addWidget(icon_label)
+        top_container.addWidget(value_label)
+        
+        # Label
         label_widget = QLabel(label)
+        label_widget.setObjectName("StatLabel")
         label_widget.setAlignment(Qt.AlignCenter)
-        label_widget.setStyleSheet("""
-            QLabel {
-                color: rgba(255, 255, 255, 0.9);
-                font-size: 11px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-            }
-        """)
         
-        layout.addWidget(value_label)
+        layout.addLayout(top_container)
         layout.addWidget(label_widget)
         
         # Store reference to value label for updates
-        widget.value_label = value_label
+        container.value_label = value_label
         
-        return widget
+        return container
     
     def update_stats(self, stats: UserStatsData):
         """Update displayed statistics"""
@@ -479,288 +275,204 @@ class UserStatsWidget(QFrame):
 class HomeView(QWidget):
     """
     Main home view implementing the View part of MVP pattern
-    Displays recipe feed with search and user stats
+    Modern ShareBite recipe feed with search and user stats
     """
     
     # Signals for communication with Presenter
-    search_requested = Signal(str, dict)  # query, filters
+    search_requested = Signal(str, dict)
     refresh_requested = Signal()
     add_recipe_requested = Signal()
     user_profile_requested = Signal()
     logout_requested = Signal()
     
-    recipe_clicked = Signal(int)  # recipe_id
-    recipe_liked = Signal(int)  # recipe_id
-    recipe_favorited = Signal(int)  # recipe_id
+    recipe_clicked = Signal(int)
+    recipe_liked = Signal(int)
+    recipe_favorited = Signal(int)
     
-    filter_changed = Signal(dict)  # filters
+    filter_changed = Signal(dict)
     load_more_requested = Signal()
     
     def __init__(self, user_data: UserData, parent=None):
         super().__init__(parent)
         self.user_data = user_data
         self.recipe_cards = {}  # recipe_id -> RecipeCard mapping
+        self.setObjectName("HomeView")
         self.setup_ui()
         self.setup_connections()
     
     def setup_ui(self):
-        """Setup the main home UI"""
-        self.setWindowTitle(f"Recipe Share - Welcome {self.user_data.username}")
-        self.setMinimumSize(1000, 700)
-        
-        # Main background
-        self.setStyleSheet("""
-            QWidget {
-                background: qradialgradient(cx: 0.3, cy: 0.3, radius: 1.2,
-                    stop: 0 #FFF8DC,
-                    stop: 0.4 #FFFACD,
-                    stop: 0.8 #F5DEB3,
-                    stop: 1 #DEB887);
-            }
-        """)
+        """Setup the main home UI with modern design"""
+        self.setWindowTitle(f"ShareBite - Welcome {self.user_data.username}")
+        self.setMinimumSize(1400, 900)
+        self.resize(1600, 1000)  # Open larger by default
         
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(20, 20, 20, 20)
-        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Top section: Welcome + Quick Actions
-        self.setup_top_section(main_layout)
+        # Header section
+        self.setup_header_section(main_layout)
+        
+        # Content wrapper
+        content_wrapper = QFrame()
+        content_wrapper.setObjectName("ContentWrapper")
+        
+        content_layout = QVBoxLayout(content_wrapper)
+        content_layout.setContentsMargins(32, 24, 32, 24)
+        content_layout.setSpacing(24)
         
         # Search section
         self.search_bar = SearchBar()
-        main_layout.addWidget(self.search_bar)
+        content_layout.addWidget(self.search_bar)
         
-        # User stats section
-        self.stats_widget = UserStatsWidget()
-        main_layout.addWidget(self.stats_widget)
+        # Recipes section (removed stats widget)
+        self.setup_recipes_section(content_layout)
         
-        # Content area with scroll
-        self.setup_content_area(main_layout)
+        main_layout.addWidget(content_wrapper)
         
         # Loading overlay
         self.setup_loading_overlay()
     
-    def setup_top_section(self, main_layout):
-        """Setup top welcome and actions section"""
-        top_frame = QFrame()
-        top_frame.setFixedHeight(80)
-        top_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 rgba(255, 255, 255, 0.9),
-                    stop: 1 rgba(255, 248, 220, 0.9));
-                border: 2px solid #D4AF37;
-                border-radius: 15px;
-            }
-        """)
+    def setup_header_section(self, main_layout):
+        """Setup modern header with branding and navigation"""
+        header = QFrame()
+        header.setObjectName("HeaderSection")
+        header.setFixedHeight(80)
         
-        top_layout = QHBoxLayout(top_frame)
-        top_layout.setContentsMargins(25, 15, 25, 15)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(32, 16, 32, 16)
+        header_layout.setSpacing(24)
+        
+        # Logo and brand container
+        brand_container = QHBoxLayout()
+        brand_container.setSpacing(12)
+        
+        # Logo/Icon
+        logo_label = QLabel("🍽️")
+        logo_label.setObjectName("AppLogo")
+        
+        # App name
+        brand_label = QLabel("ShareBite")
+        brand_label.setObjectName("AppBrand")
         
         # Welcome message
-        welcome_label = QLabel(f"Welcome back, Chef {self.user_data.username}!")
-        welcome_label.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 24px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-                background: transparent;
-                border: none;
-            }
-        """)
+        welcome_label = QLabel(f"Welcome, {self.user_data.username}!")
+        welcome_label.setObjectName("WelcomeMessage")
         
-        # Action buttons
-        actions_layout = QHBoxLayout()
-        actions_layout.setSpacing(10)
+        brand_container.addWidget(logo_label)
+        brand_container.addWidget(brand_label)
+        brand_container.addWidget(welcome_label)
+        
+        # Navigation actions
+        nav_container = QHBoxLayout()
+        nav_container.setSpacing(12)
         
         # Add recipe button
-        add_button = QPushButton("Add Recipe")
-        add_button.setFixedSize(120, 40)
-        add_button.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #32CD32,
-                    stop: 1 #228B22);
-                color: white;
-                border: none;
-                border-radius: 10px;
-                font-size: 13px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #7FFF00,
-                    stop: 1 #32CD32);
-            }
-        """)
+        add_button = QPushButton("+ Add Recipe")
+        add_button.setObjectName("AddRecipeButton")
         add_button.clicked.connect(self.add_recipe_requested.emit)
         
         # Profile button
         profile_button = QPushButton("Profile")
-        profile_button.setFixedSize(80, 40)
-        profile_button.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #D2691E;
-                border: 2px solid #D2691E;
-                border-radius: 10px;
-                font-size: 13px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: rgba(210, 105, 30, 0.1);
-                color: #8B4513;
-                border-color: #8B4513;
-            }
-        """)
+        profile_button.setObjectName("ProfileButton")
         profile_button.clicked.connect(self.user_profile_requested.emit)
         
         # Logout button
         logout_button = QPushButton("Logout")
-        logout_button.setFixedSize(80, 40)
-        logout_button.setStyleSheet("""
-            QPushButton {
-                background: transparent;
-                color: #DC143C;
-                border: 2px solid #DC143C;
-                border-radius: 10px;
-                font-size: 13px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: rgba(220, 20, 60, 0.1);
-                color: #B22222;
-                border-color: #B22222;
-            }
-        """)
+        logout_button.setObjectName("LogoutButton")
         logout_button.clicked.connect(self.logout_requested.emit)
         
-        actions_layout.addWidget(add_button)
-        actions_layout.addWidget(profile_button)
-        actions_layout.addWidget(logout_button)
+        nav_container.addWidget(add_button)
+        nav_container.addWidget(profile_button)
+        nav_container.addWidget(logout_button)
         
-        top_layout.addWidget(welcome_label)
-        top_layout.addStretch()
-        top_layout.addLayout(actions_layout)
+        header_layout.addLayout(brand_container)
+        header_layout.addStretch()
+        header_layout.addLayout(nav_container)
         
-        main_layout.addWidget(top_frame)
+        main_layout.addWidget(header)
     
-    def setup_content_area(self, main_layout):
-        """Setup scrollable content area for recipe cards"""
-        # Content header
-        content_header = QFrame()
-        content_header.setFixedHeight(50)
+    def setup_recipes_section(self, content_layout):
+        """Setup modern scrollable recipes section"""
+        # Section header
+        recipes_header = QFrame()
+        recipes_header.setObjectName("RecipesHeader")
         
-        header_layout = QHBoxLayout(content_header)
-        header_layout.setContentsMargins(10, 10, 10, 10)
+        header_layout = QHBoxLayout(recipes_header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(16)
         
         self.content_title = QLabel("Latest Recipes")
-        self.content_title.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 20px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-            }
-        """)
+        self.content_title.setObjectName("SectionTitle")
         
-        refresh_button = QPushButton("Refresh")
-        refresh_button.setFixedSize(80, 30)
-        refresh_button.setStyleSheet("""
-            QPushButton {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FF6347,
-                    stop: 1 #DC143C);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                font-size: 11px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-            QPushButton:hover {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FF7F50,
-                    stop: 1 #FF6347);
-            }
-        """)
+        refresh_button = QPushButton("🔄 Refresh")
+        refresh_button.setObjectName("RefreshButton")
         refresh_button.clicked.connect(self.refresh_requested.emit)
         
         header_layout.addWidget(self.content_title)
         header_layout.addStretch()
         header_layout.addWidget(refresh_button)
         
-        main_layout.addWidget(content_header)
+        content_layout.addWidget(recipes_header)
         
-        # Scrollable recipe area
+        # Scrollable recipes area
         self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("RecipesScrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                background: transparent;
-                border: none;
-            }
-            QScrollBar:vertical {
-                background: rgba(139, 69, 19, 0.2);
-                width: 12px;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical {
-                background: rgba(139, 69, 19, 0.6);
-                border-radius: 6px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: rgba(139, 69, 19, 0.8);
-            }
-        """)
         
         # Recipe grid container
         self.recipe_container = QWidget()
+        self.recipe_container.setObjectName("RecipeContainer")
+        
         self.recipe_layout = QGridLayout(self.recipe_container)
-        self.recipe_layout.setSpacing(20)
-        self.recipe_layout.setContentsMargins(20, 20, 20, 20)
+        self.recipe_layout.setSpacing(24)
+        self.recipe_layout.setContentsMargins(0, 16, 0, 16)
         
         self.scroll_area.setWidget(self.recipe_container)
-        main_layout.addWidget(self.scroll_area)
+        content_layout.addWidget(self.scroll_area)
     
     def setup_loading_overlay(self):
-        """Setup loading overlay"""
-        self.loading_label = QLabel("Loading delicious recipes...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("""
-            QLabel {
-                background: rgba(139, 69, 19, 0.9);
-                color: white;
-                font-size: 18px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-                padding: 20px;
-                border-radius: 15px;
-            }
-        """)
-        self.loading_label.hide()
+        """Setup modern minimal loading indicator"""
+        self.loading_indicator = QFrame()
+        self.loading_indicator.setObjectName("LoadingIndicator")
+        self.loading_indicator.setFixedSize(80, 80)
+        
+        indicator_layout = QVBoxLayout(self.loading_indicator)
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Spinning emoji or loading animation
+        loading_icon = QLabel("🍳")
+        loading_icon.setObjectName("LoadingIcon")
+        loading_icon.setAlignment(Qt.AlignCenter)
+        
+        indicator_layout.addWidget(loading_icon)
+        
+        self.loading_indicator.hide()
+        
+        # Create animation timer for spinning effect
+        self.loading_timer = QTimer()
+        self.loading_timer.timeout.connect(self.animate_loading)
+        self.loading_icons = ["🍳", "👨‍🍳", "🥘", "🍽️"]
+        self.loading_index = 0
     
     def setup_connections(self):
         """Setup signal connections"""
         self.search_bar.search_requested.connect(self.search_requested.emit)
     
     def display_recipes(self, recipes: List[RecipeData]):
-        """Display recipe cards in grid"""
+        """Display recipe cards in modern grid layout"""
         self.clear_recipe_grid()
         
         if not recipes:
             self.show_empty_state("No recipes found")
             return
         
-        # Add recipe cards to grid
-        columns = 3  # 3 cards per row
+        # Calculate optimal columns (force 3 columns for better layout)
+        columns = 3
+        
         for i, recipe in enumerate(recipes):
             row = i // columns
             col = i % columns
@@ -777,13 +489,21 @@ class HomeView(QWidget):
         self.content_title.setText(f"Latest Recipes ({len(recipes)} found)")
     
     def display_search_results(self, recipes: List[RecipeData], query: str):
-        """Display search results"""
+        """Display search results with query context"""
         self.display_recipes(recipes)
         self.content_title.setText(f"Search Results for '{query}' ({len(recipes)} found)")
     
+    def animate_loading(self):
+        """Animate the loading indicator"""
+        if hasattr(self, 'loading_indicator') and self.loading_indicator.isVisible():
+            loading_icon = self.loading_indicator.findChild(QLabel, "LoadingIcon")
+            if loading_icon:
+                self.loading_index = (self.loading_index + 1) % len(self.loading_icons)
+                loading_icon.setText(self.loading_icons[self.loading_index])
+    
     def display_user_stats(self, stats: UserStatsData):
-        """Display user statistics"""
-        self.stats_widget.update_stats(stats)
+        """Display user statistics (removed - no longer needed)"""
+        pass  # Stats widget removed, keeping method for compatibility
     
     def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for specific recipe card with optional likes count"""
@@ -818,31 +538,36 @@ class HomeView(QWidget):
         self.recipe_cards.clear()
     
     def show_empty_state(self, message: str):
-        """Show empty state message"""
-        empty_label = QLabel(message)
-        empty_label.setAlignment(Qt.AlignCenter)
-        empty_label.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 18px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-                background: rgba(255, 255, 255, 0.8);
-                border: 2px dashed #D4AF37;
-                border-radius: 15px;
-                padding: 40px;
-                margin: 20px;
-            }
-        """)
-        self.recipe_layout.addWidget(empty_label, 0, 0, 1, 3)  # Span across 3 columns
+        """Show modern empty state message"""
+        empty_container = QFrame()
+        empty_container.setObjectName("EmptyState")
+        
+        empty_layout = QVBoxLayout(empty_container)
+        empty_layout.setAlignment(Qt.AlignCenter)
+        empty_layout.setSpacing(16)
+        
+        empty_icon = QLabel("🍽️")
+        empty_icon.setObjectName("EmptyStateIcon")
+        empty_icon.setAlignment(Qt.AlignCenter)
+        
+        empty_message = QLabel(message)
+        empty_message.setObjectName("EmptyStateMessage")
+        empty_message.setAlignment(Qt.AlignCenter)
+        
+        empty_layout.addWidget(empty_icon)
+        empty_layout.addWidget(empty_message)
+        
+        self.recipe_layout.addWidget(empty_container, 0, 0, 1, 3)  # Span across 3 columns
     
     def set_loading_state(self, loading: bool):
-        """Set loading state"""
+        """Set modern minimal loading state"""
         if loading:
-            self.loading_label.show()
-            self.loading_label.raise_()
+            self.loading_indicator.show()
+            self.loading_indicator.raise_()
+            self.loading_timer.start(500)  # Change icon every 500ms
         else:
-            self.loading_label.hide()
+            self.loading_indicator.hide()
+            self.loading_timer.stop()
     
     def show_error_message(self, message: str):
         """Show error message to user"""
