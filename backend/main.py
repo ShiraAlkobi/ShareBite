@@ -6,8 +6,8 @@ import uvicorn
 from database import test_connection, get_database_stats
 
 # Import authentication and recipe routes
-from auth_routes import router as auth_router
-from recipe_routes import router as recipe_router
+from routes.auth_routes import router as auth_router
+from routes.recipe_routes import router as recipe_router
 
 # Import other routers when you create them
 # from routers import recipes, users, tags
@@ -196,10 +196,10 @@ if __name__ == "__main__":
         log_level="info"
     )
 
-# from chat_routes import router as chat_router
+from routes.chat_routes import router as chat_router
 
-# app.include_router(
-#     chat_router,
-#     prefix="/api/v1",
-#     tags=["Chat"]
-# )
+app.include_router(
+    chat_router,
+    prefix="/api/v1",
+    tags=["Chat"]
+)

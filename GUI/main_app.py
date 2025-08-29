@@ -185,7 +185,6 @@ def main():
     """Main application entry point"""
     app = QApplication(sys.argv)
 
-<<<<<<< HEAD
     with open("C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\theme.qss", "r", encoding="utf-8") as f:
         app.setStyleSheet(f.read())
 
