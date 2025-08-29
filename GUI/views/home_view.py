@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
     QPushButton, QFrame, QScrollArea, QGridLayout, QComboBox,
-    QGraphicsDropShadowEffect, QSpacerItem, QSizePolicy, QTextEdit
+    QSpacerItem, QSizePolicy, QTextEdit
 )
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QColor, QPixmap, QPainter
+from PySide6.QtGui import QFont, QColor
 from typing import List, Dict, Any
 from models.home_model import RecipeData, UserStatsData
 from models.login_model import UserData
@@ -24,8 +24,8 @@ class RecipeCard(QFrame):
 
     def setup_ui(self):
         """Setup recipe card UI components"""
-        self.setFixedSize(300, 300)
-        self.setProperty("class", "recipe-card")
+        # Much smaller card size for better screen fit
+        self.setFixedSize(280, 320)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -34,10 +34,11 @@ class RecipeCard(QFrame):
         # Recipe image container
         image_container = QFrame()
         image_container.setObjectName("RecipeImageContainer")
-        image_container.setFixedHeight(180)
+        image_container.setFixedHeight(140)
         
         image_layout = QVBoxLayout(image_container)
         image_layout.setContentsMargins(0, 0, 0, 0)
+        image_layout.setAlignment(Qt.AlignCenter)
 
         if self.recipe.image_url:
             image_label = QLabel("🍽️")
@@ -54,8 +55,8 @@ class RecipeCard(QFrame):
         content_container.setObjectName("RecipeContent")
         
         content_layout = QVBoxLayout(content_container)
-        content_layout.setContentsMargins(20, 16, 20, 16)
-        content_layout.setSpacing(12)
+        content_layout.setContentsMargins(16, 12, 16, 12)
+        content_layout.setSpacing(8)
 
         # Recipe title
         self.title_label = QLabel(self.recipe.title)
@@ -67,7 +68,7 @@ class RecipeCard(QFrame):
         meta_container.setObjectName("RecipeMetadata")
         meta_layout = QVBoxLayout(meta_container)
         meta_layout.setContentsMargins(0, 0, 0, 0)
-        meta_layout.setSpacing(4)
+        meta_layout.setSpacing(2)
 
         # Author
         author_label = QLabel(f"by Chef {self.recipe.author_name}")
@@ -86,7 +87,7 @@ class RecipeCard(QFrame):
         
         actions_layout = QHBoxLayout(actions_container)
         actions_layout.setContentsMargins(0, 0, 0, 0)
-        actions_layout.setSpacing(8)
+        actions_layout.setSpacing(6)
 
         # Like button
         self.like_button = QPushButton(f"♥ {self.recipe.likes_count}")
@@ -101,7 +102,7 @@ class RecipeCard(QFrame):
         self.favorite_button.clicked.connect(lambda: self.recipe_favorited.emit(self.recipe.recipe_id))
 
         # View button
-        view_button = QPushButton("View Recipe")
+        view_button = QPushButton("View")
         view_button.setObjectName("ViewRecipeButton")
         view_button.clicked.connect(lambda: self.recipe_clicked.emit(self.recipe.recipe_id))
 
@@ -140,7 +141,7 @@ class RecipeCard(QFrame):
         self.favorite_button.style().polish(self.favorite_button)
 
 class SearchBar(QFrame):
-    """Modern search bar widget with filters"""
+    """Modern compact search bar widget with filters"""
     
     search_requested = Signal(str, dict)  # query, filters
     
@@ -151,19 +152,19 @@ class SearchBar(QFrame):
     
     def setup_ui(self):
         """Setup search bar UI components"""
-        self.setFixedHeight(70)
+        self.setFixedHeight(50)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(24, 16, 24, 16)
-        layout.setSpacing(16)
+        layout.setContentsMargins(16, 8, 16, 8)
+        layout.setSpacing(12)
         
         # Search icon and input container
         search_container = QFrame()
         search_container.setObjectName("SearchContainer")
         
         search_layout = QHBoxLayout(search_container)
-        search_layout.setContentsMargins(16, 0, 16, 0)
-        search_layout.setSpacing(12)
+        search_layout.setContentsMargins(12, 0, 12, 0)
+        search_layout.setSpacing(8)
         
         # Search icon
         search_icon = QLabel("🔍")
@@ -172,7 +173,7 @@ class SearchBar(QFrame):
         # Search input
         self.search_input = QLineEdit()
         self.search_input.setObjectName("SearchInput")
-        self.search_input.setPlaceholderText("Search for delicious recipes...")
+        self.search_input.setPlaceholderText("Search for recipes...")
         self.search_input.returnPressed.connect(self.perform_search)
         
         search_layout.addWidget(search_icon)
@@ -181,10 +182,10 @@ class SearchBar(QFrame):
         # Filter dropdown
         self.filter_combo = QComboBox()
         self.filter_combo.setObjectName("FilterCombo")
-        self.filter_combo.addItems(["All Recipes", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"])
+        self.filter_combo.addItems(["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"])
         
         # Search button
-        search_button = QPushButton("Find Recipes")
+        search_button = QPushButton("Search")
         search_button.setObjectName("SearchButton")
         search_button.clicked.connect(self.perform_search)
         
@@ -198,13 +199,13 @@ class SearchBar(QFrame):
         selected_filter = self.filter_combo.currentText()
         
         filters = {}
-        if selected_filter != "All Recipes":
+        if selected_filter != "All":
             filters["category"] = selected_filter.lower()
         
         self.search_requested.emit(query, filters)
 
 class UserStatsWidget(QFrame):
-    """Modern user statistics display widget"""
+    """Compact user statistics display widget"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -213,16 +214,16 @@ class UserStatsWidget(QFrame):
     
     def setup_ui(self):
         """Setup user stats UI components"""
-        self.setFixedHeight(120)
+        self.setFixedHeight(80)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(32, 20, 32, 20)
-        layout.setSpacing(40)
+        layout.setContentsMargins(20, 12, 20, 12)
+        layout.setSpacing(30)
         
         # Stats containers
-        self.recipes_stat = self.create_stat_widget("Recipes Created", "0", "📝")
-        self.likes_stat = self.create_stat_widget("Likes Received", "0", "♥")
-        self.favorites_stat = self.create_stat_widget("Total Favorites", "0", "⭐")
+        self.recipes_stat = self.create_stat_widget("Recipes", "0", "📖")
+        self.likes_stat = self.create_stat_widget("Likes", "0", "♥")
+        self.favorites_stat = self.create_stat_widget("Favorites", "0", "⭐")
         
         layout.addWidget(self.recipes_stat)
         layout.addWidget(self.likes_stat)
@@ -235,13 +236,13 @@ class UserStatsWidget(QFrame):
         container.setObjectName("StatContainer")
         
         layout = QVBoxLayout(container)
-        layout.setSpacing(8)
+        layout.setSpacing(4)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(24, 16, 24, 16)
+        layout.setContentsMargins(16, 8, 16, 8)
         
         # Icon and value container
         top_container = QHBoxLayout()
-        top_container.setSpacing(12)
+        top_container.setSpacing(8)
         top_container.setAlignment(Qt.AlignCenter)
         
         icon_label = QLabel(icon)
@@ -274,8 +275,8 @@ class UserStatsWidget(QFrame):
 
 class HomeView(QWidget):
     """
-    Main home view implementing the View part of MVP pattern
-    Modern ShareBite recipe feed with search and user stats
+    Main home view with modern design matching login view
+    Scaled for screen compatibility with scroll support
     """
     
     # Signals for communication with Presenter
@@ -301,12 +302,31 @@ class HomeView(QWidget):
         self.setup_connections()
     
     def setup_ui(self):
-        """Setup the main home UI with modern design"""
+        """Setup the main home UI with modern design and scroll support"""
         self.setWindowTitle(f"ShareBite - Welcome {self.user_data.username}")
-        self.setMinimumSize(1400, 900)
-        self.resize(1600, 1000)  # Open larger by default
+        # Set reasonable window size
+        self.setMinimumSize(700, 500)
+        self.setMaximumSize(1000, 700)
+        self.resize(900, 650)
         
-        main_layout = QVBoxLayout(self)
+        # Create scroll area for entire content
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.NoFrame)
+        
+        # Create scrollable content widget
+        content_widget = QWidget()
+        content_widget.setObjectName("HomeContentWidget")
+        
+        # Main layout for the window
+        window_layout = QVBoxLayout(self)
+        window_layout.setContentsMargins(0, 0, 0, 0)
+        window_layout.addWidget(scroll_area)
+        
+        # Content layout
+        main_layout = QVBoxLayout(content_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
@@ -318,34 +338,41 @@ class HomeView(QWidget):
         content_wrapper.setObjectName("ContentWrapper")
         
         content_layout = QVBoxLayout(content_wrapper)
-        content_layout.setContentsMargins(32, 24, 32, 24)
-        content_layout.setSpacing(24)
+        content_layout.setContentsMargins(20, 16, 20, 16)
+        content_layout.setSpacing(16)
         
         # Search section
         self.search_bar = SearchBar()
         content_layout.addWidget(self.search_bar)
         
-        # Recipes section (removed stats widget)
+        # Stats section
+        self.stats_widget = UserStatsWidget()
+        content_layout.addWidget(self.stats_widget)
+        
+        # Recipes section
         self.setup_recipes_section(content_layout)
         
         main_layout.addWidget(content_wrapper)
+        
+        # Set the content widget to scroll area
+        scroll_area.setWidget(content_widget)
         
         # Loading overlay
         self.setup_loading_overlay()
     
     def setup_header_section(self, main_layout):
-        """Setup modern header with branding and navigation"""
+        """Setup modern compact header with branding and navigation"""
         header = QFrame()
         header.setObjectName("HeaderSection")
-        header.setFixedHeight(80)
+        header.setFixedHeight(60)
         
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(32, 16, 32, 16)
-        header_layout.setSpacing(24)
+        header_layout.setContentsMargins(20, 8, 20, 8)
+        header_layout.setSpacing(16)
         
         # Logo and brand container
         brand_container = QHBoxLayout()
-        brand_container.setSpacing(12)
+        brand_container.setSpacing(10)
         
         # Logo/Icon
         logo_label = QLabel("🍽️")
@@ -365,10 +392,10 @@ class HomeView(QWidget):
         
         # Navigation actions
         nav_container = QHBoxLayout()
-        nav_container.setSpacing(12)
+        nav_container.setSpacing(8)
         
         # Add recipe button
-        add_button = QPushButton("+ Add Recipe")
+        add_button = QPushButton("+ Add")
         add_button.setObjectName("AddRecipeButton")
         add_button.clicked.connect(self.add_recipe_requested.emit)
         
@@ -393,14 +420,14 @@ class HomeView(QWidget):
         main_layout.addWidget(header)
     
     def setup_recipes_section(self, content_layout):
-        """Setup modern scrollable recipes section"""
+        """Setup compact scrollable recipes section"""
         # Section header
         recipes_header = QFrame()
         recipes_header.setObjectName("RecipesHeader")
         
         header_layout = QHBoxLayout(recipes_header)
         header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(16)
+        header_layout.setSpacing(12)
         
         self.content_title = QLabel("Latest Recipes")
         self.content_title.setObjectName("SectionTitle")
@@ -415,35 +442,26 @@ class HomeView(QWidget):
         
         content_layout.addWidget(recipes_header)
         
-        # Scrollable recipes area
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setObjectName("RecipesScrollArea")
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        
-        # Recipe grid container
+        # Recipe grid container (no additional scroll area needed)
         self.recipe_container = QWidget()
         self.recipe_container.setObjectName("RecipeContainer")
         
         self.recipe_layout = QGridLayout(self.recipe_container)
-        self.recipe_layout.setSpacing(24)
-        self.recipe_layout.setContentsMargins(0, 16, 0, 16)
+        self.recipe_layout.setSpacing(16)
+        self.recipe_layout.setContentsMargins(0, 8, 0, 8)
         
-        self.scroll_area.setWidget(self.recipe_container)
-        content_layout.addWidget(self.scroll_area)
+        content_layout.addWidget(self.recipe_container)
     
     def setup_loading_overlay(self):
-        """Setup modern minimal loading indicator"""
-        self.loading_indicator = QFrame()
+        """Setup compact loading indicator"""
+        self.loading_indicator = QFrame(self)
         self.loading_indicator.setObjectName("LoadingIndicator")
-        self.loading_indicator.setFixedSize(80, 80)
+        self.loading_indicator.setFixedSize(60, 60)
         
         indicator_layout = QVBoxLayout(self.loading_indicator)
         indicator_layout.setAlignment(Qt.AlignCenter)
         indicator_layout.setContentsMargins(0, 0, 0, 0)
         
-        # Spinning emoji or loading animation
         loading_icon = QLabel("🍳")
         loading_icon.setObjectName("LoadingIcon")
         loading_icon.setAlignment(Qt.AlignCenter)
@@ -463,14 +481,14 @@ class HomeView(QWidget):
         self.search_bar.search_requested.connect(self.search_requested.emit)
     
     def display_recipes(self, recipes: List[RecipeData]):
-        """Display recipe cards in modern grid layout"""
+        """Display recipe cards in compact grid layout"""
         self.clear_recipe_grid()
         
         if not recipes:
             self.show_empty_state("No recipes found")
             return
         
-        # Calculate optimal columns (force 3 columns for better layout)
+        # Calculate optimal columns based on available width (aim for 3 columns)
         columns = 3
         
         for i, recipe in enumerate(recipes):
@@ -486,12 +504,12 @@ class HomeView(QWidget):
             self.recipe_layout.addWidget(card, row, col)
         
         # Update content title
-        self.content_title.setText(f"Latest Recipes ({len(recipes)} found)")
+        self.content_title.setText(f"Latest Recipes ({len(recipes)})")
     
     def display_search_results(self, recipes: List[RecipeData], query: str):
         """Display search results with query context"""
         self.display_recipes(recipes)
-        self.content_title.setText(f"Search Results for '{query}' ({len(recipes)} found)")
+        self.content_title.setText(f"'{query}' ({len(recipes)})")
     
     def animate_loading(self):
         """Animate the loading indicator"""
@@ -502,8 +520,8 @@ class HomeView(QWidget):
                 loading_icon.setText(self.loading_icons[self.loading_index])
     
     def display_user_stats(self, stats: UserStatsData):
-        """Display user statistics (removed - no longer needed)"""
-        pass  # Stats widget removed, keeping method for compatibility
+        """Display user statistics"""
+        self.stats_widget.update_stats(stats)
     
     def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for specific recipe card with optional likes count"""
@@ -521,8 +539,6 @@ class HomeView(QWidget):
                     likes_count = current_count
             
             card.update_like_status(is_liked, likes_count)
-        else:
-            print(f"Recipe card {recipe_id} not found for like update")
     
     def update_recipe_favorite_status(self, recipe_id: int, is_favorited: bool):
         """Update favorite status for specific recipe card"""
@@ -538,13 +554,14 @@ class HomeView(QWidget):
         self.recipe_cards.clear()
     
     def show_empty_state(self, message: str):
-        """Show modern empty state message"""
+        """Show compact empty state message"""
         empty_container = QFrame()
         empty_container.setObjectName("EmptyState")
         
         empty_layout = QVBoxLayout(empty_container)
         empty_layout.setAlignment(Qt.AlignCenter)
-        empty_layout.setSpacing(16)
+        empty_layout.setSpacing(12)
+        empty_layout.setContentsMargins(20, 20, 20, 20)
         
         empty_icon = QLabel("🍽️")
         empty_icon.setObjectName("EmptyStateIcon")
@@ -560,90 +577,33 @@ class HomeView(QWidget):
         self.recipe_layout.addWidget(empty_container, 0, 0, 1, 3)  # Span across 3 columns
     
     def set_loading_state(self, loading: bool):
-        """Set modern minimal loading state"""
+        """Set loading state with animation"""
         if loading:
             self.loading_indicator.show()
             self.loading_indicator.raise_()
             self.loading_timer.start(500)  # Change icon every 500ms
+            
+            # Center the loading indicator
+            parent_rect = self.rect()
+            indicator_rect = self.loading_indicator.rect()
+            x = (parent_rect.width() - indicator_rect.width()) // 2
+            y = (parent_rect.height() - indicator_rect.height()) // 2
+            self.loading_indicator.move(x, y)
         else:
             self.loading_indicator.hide()
             self.loading_timer.stop()
     
     def show_error_message(self, message: str):
         """Show error message to user"""
-        error_label = QLabel(f"Error: {message}")
-        error_label.setAlignment(Qt.AlignCenter)
-        error_label.setStyleSheet("""
-            QLabel {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FFE4E1,
-                    stop: 1 #FFC0CB);
-                color: #8B0000;
-                font-size: 14px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-                padding: 15px;
-                border: 2px solid #DC143C;
-                border-radius: 10px;
-                margin: 10px;
-            }
-        """)
-        
-        # Add to top of recipe area temporarily
-        self.recipe_layout.addWidget(error_label, 0, 0, 1, 3)
-        
-        # Auto-remove after 5 seconds
-        QTimer.singleShot(5000, lambda: (
-            self.recipe_layout.removeWidget(error_label),
-            error_label.deleteLater()
-        ))
+        self.show_temporary_message(message, 5000, True)
     
     def show_success_message(self, message: str):
         """Show success message to user"""
-        success_label = QLabel(message)
-        success_label.setAlignment(Qt.AlignCenter)
-        success_label.setStyleSheet("""
-            QLabel {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #F0FFF0,
-                    stop: 1 #E6FFE6);
-                color: #006400;
-                font-size: 14px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-                padding: 15px;
-                border: 2px solid #32CD32;
-                border-radius: 10px;
-                margin: 10px;
-            }
-        """)
-        
-        # Add to top of recipe area temporarily
-        self.recipe_layout.addWidget(success_label, 0, 0, 1, 3)
-        
-        # Auto-remove after 3 seconds
-        QTimer.singleShot(3000, lambda: (
-            self.recipe_layout.removeWidget(success_label),
-            success_label.deleteLater()
-        ))
+        self.show_temporary_message(message, 3000, False)
     
-    def resizeEvent(self, event):
-        """Handle window resize to position loading overlay"""
-        super().resizeEvent(event)
-        if hasattr(self, 'loading_label'):
-            # Center loading label
-            x = (self.width() - self.loading_label.width()) // 2
-            y = (self.height() - self.loading_label.height()) // 2
-            self.loading_label.move(x, y)
-
     def show_temporary_message(self, message: str, duration: int = 3000, is_error: bool = False):
         """
         Show a temporary message to the user (toast-style notification)
-        
-        Args:
-            message: Message to display
-            duration: How long to show message (milliseconds)  
-            is_error: Whether this is an error message (affects styling)
         """
         try:
             # Create temporary message label if it doesn't exist
@@ -652,48 +612,22 @@ class HomeView(QWidget):
                 self.temp_message_label.setAlignment(Qt.AlignCenter)
                 self.temp_message_label.hide()
                 self.temp_message_label.setWordWrap(True)
+                self.temp_message_label.setObjectName("TempMessageLabel")
             
-            # Set message and styling
+            # Set message and property for CSS styling
             self.temp_message_label.setText(message)
-            if is_error:
-                self.temp_message_label.setStyleSheet("""
-                    QLabel {
-                        background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                            stop: 0 #FFE4E1,
-                            stop: 1 #FFC0CB);
-                        color: #8B0000;
-                        font-size: 14px;
-                        font-weight: 600;
-                        font-family: 'Georgia', serif;
-                        padding: 15px;
-                        border: 2px solid #DC143C;
-                        border-radius: 10px;
-                        max-width: 400px;
-                    }
-                """)
-            else:
-                self.temp_message_label.setStyleSheet("""
-                    QLabel {
-                        background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                            stop: 0 #F0FFF0,
-                            stop: 1 #E6FFE6);
-                        color: #006400;
-                        font-size: 14px;
-                        font-weight: 600;
-                        font-family: 'Georgia', serif;
-                        padding: 15px;
-                        border: 2px solid #32CD32;
-                        border-radius: 10px;
-                        max-width: 400px;
-                    }
-                """)
+            self.temp_message_label.setProperty("error", str(is_error).lower())
+            
+            # Force style refresh
+            self.temp_message_label.style().unpolish(self.temp_message_label)
+            self.temp_message_label.style().polish(self.temp_message_label)
             
             # Position the message (center-bottom of the view)
             self.temp_message_label.adjustSize()
             parent_rect = self.rect()
             label_rect = self.temp_message_label.rect()
             x = (parent_rect.width() - label_rect.width()) // 2
-            y = parent_rect.height() - label_rect.height() - 50  # 50px from bottom
+            y = parent_rect.height() - label_rect.height() - 40  # 40px from bottom
             self.temp_message_label.move(x, y)
             
             # Show the message
@@ -717,3 +651,12 @@ class HomeView(QWidget):
             self.temp_message_label.hide()
         if hasattr(self, 'temp_message_timer'):
             self.temp_message_timer.stop()
+    
+    def resizeEvent(self, event):
+        """Handle window resize to position loading overlay"""
+        super().resizeEvent(event)
+        if hasattr(self, 'loading_indicator') and self.loading_indicator.isVisible():
+            # Center loading indicator
+            x = (self.width() - self.loading_indicator.width()) // 2
+            y = (self.height() - self.loading_indicator.height()) // 2
+            self.loading_indicator.move(x, y)

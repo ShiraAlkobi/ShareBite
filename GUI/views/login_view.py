@@ -1,476 +1,392 @@
-
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
     QPushButton, QFrame, QStackedWidget, QTextEdit, QCheckBox,
-    QGraphicsDropShadowEffect, QSpacerItem, QSizePolicy, QGridLayout
+    QScrollArea, QSpacerItem, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QPropertyAnimation, QEasingCurve, QRect
-from PySide6.QtGui import QFont, QColor, QPainter, QPainterPath
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QFont, QColor
 
-class RecipeCard(QFrame):
-    """Recipe-styled card that looks like a recipe card"""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 #FFFEF7,
-                    stop: 0.05 #FFF8E1,
-                    stop: 1 #F5F5DC);
-                border: 2px solid #D4AF37;
-                border-radius: 15px;
-                box-shadow: 0 8px 32px rgba(212, 175, 55, 0.3);
-            }
-        """)
-        
-        # Add vintage paper effect shadow
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(25)
-        shadow.setColor(QColor(139, 69, 19, 80))
-        shadow.setOffset(5, 8)
-        self.setGraphicsEffect(shadow)
-
-class VintageLineEdit(QLineEdit):
-    """Vintage recipe book style input"""
-    
-    def __init__(self, placeholder_text: str = "", parent=None):
-        super().__init__(parent)
-        self.setPlaceholderText(placeholder_text)
-        self.setFixedHeight(45)
-        self.setStyleSheet("""
-            QLineEdit {
-                background: #FFFFFF;
-                border: 2px solid #CD853F;
-                border-radius: 10px;
-                padding: 0 15px;
-                font-size: 15px;
-                color: #8B4513;
-                font-family: 'Georgia', 'Times New Roman', serif;
-                font-weight: 500;
-            }
-            QLineEdit:focus {
-                border: 3px solid #D2691E;
-                background: #FFF8DC;
-                box-shadow: inset 0 2px 4px rgba(210, 105, 30, 0.2);
-            }
-            QLineEdit:hover {
-                border: 2px solid #D2691E;
-                background: #FFFAF0;
-            }
-            QLineEdit::placeholder {
-                color: rgba(139, 69, 19, 0.6);
-                font-style: italic;
-            }
-        """)
-
-class ChefButton(QPushButton):
-    """Chef-inspired cooking button"""
-    
-    def __init__(self, text: str = "", style: str = "primary", parent=None):
-        super().__init__(text, parent)
-        self.setFixedHeight(50)
-        
-        if style == "primary":
-            self.setStyleSheet("""
-                QPushButton {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #FF6347,
-                        stop: 0.5 #FF4500,
-                        stop: 1 #DC143C);
-                    color: #FFFFFF;
-                    border: 3px solid #B22222;
-                    border-radius: 12px;
-                    font-size: 15px;
-                    font-weight: 700;
-                    font-family: 'Georgia', serif;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                }
-                QPushButton:hover {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #FF7F50,
-                        stop: 0.5 #FF6347,
-                        stop: 1 #FF4500);
-                    border: 3px solid #CD5C5C;
-                }
-                QPushButton:pressed {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #DC143C,
-                        stop: 1 #B22222);
-                }
-                QPushButton:disabled {
-                    background: #D3D3D3;
-                    color: #A9A9A9;
-                    border: 3px solid #C0C0C0;
-                }
-            """)
-        elif style == "secondary":
-            self.setStyleSheet("""
-                QPushButton {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #32CD32,
-                        stop: 0.5 #228B22,
-                        stop: 1 #006400);
-                    color: #FFFFFF;
-                    border: 3px solid #006400;
-                    border-radius: 12px;
-                    font-size: 15px;
-                    font-weight: 700;
-                    font-family: 'Georgia', serif;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                }
-                QPushButton:hover {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #7FFF00,
-                        stop: 0.5 #32CD32,
-                        stop: 1 #228B22);
-                }
-            """)
-        elif style == "ghost":
-            self.setStyleSheet("""
-                QPushButton {
-                    background: transparent;
-                    color: #D2691E;
-                    border: 2px solid #D2691E;
-                    border-radius: 10px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    font-family: 'Georgia', serif;
-                    padding: 8px 16px;
-                }
-                QPushButton:hover {
-                    background: rgba(210, 105, 30, 0.1);
-                    color: #8B4513;
-                    border-color: #8B4513;
-                }
-            """)
-
-class CookingLoginCard(RecipeCard):
-    """Recipe-themed login card with fixed structure"""
+class LoginCard(QFrame):
+    """Login card with modern structure matching home page design"""
     
     login_requested = Signal(str, str)
     switch_to_register = Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(400, 480)  # Fixed size prevents resizing
+        self.setObjectName("LoginCard")
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup the recipe login card with fixed layout"""
+        """Setup modern login card structure"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 25, 30, 25)
-        main_layout.setSpacing(0)  # Control spacing manually
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
         
-        # Header section - fixed height
-        header_container = QWidget()
-        header_container.setFixedHeight(70)
-        header_layout = QVBoxLayout(header_container)
-        header_layout.setContentsMargins(15, 10, 15, 10)
-        header_layout.setSpacing(2)
+        # Header section with modern styling
+        header_section = self.create_header_section()
+        main_layout.addWidget(header_section)
         
-        header_frame = QFrame()
-        header_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 rgba(255, 165, 0, 0.3),
-                    stop: 0.5 rgba(255, 140, 0, 0.2),
-                    stop: 1 rgba(255, 165, 0, 0.3));
-                border: 2px dashed #D2691E;
-                border-radius: 10px;
-            }
-        """)
+        # Form content section
+        content_section = self.create_content_section()
+        main_layout.addWidget(content_section)
         
-        title = QLabel("Welcome Back, Chef!")
+        # Footer section
+        footer_section = self.create_footer_section()
+        main_layout.addWidget(footer_section)
+    
+    def create_header_section(self):
+        """Create bold modern header section"""
+        header = QFrame()
+        header.setObjectName("LoginCardHeader")
+        header.setFixedHeight(65)
+        
+        layout = QVBoxLayout(header)
+        layout.setContentsMargins(20, 8, 20, 8)
+        layout.setSpacing(4)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        title = QLabel("Welcome Back!")
+        title.setObjectName("LoginCardTitle")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 18px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-                text-shadow: 2px 2px 4px rgba(139, 69, 19, 0.3);
-            }
-        """)
         
-        subtitle = QLabel("Let's cook up something amazing")
+        subtitle = QLabel("Ready to cook up something amazing?")
+        subtitle.setObjectName("LoginCardSubtitle")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("""
-            QLabel {
-                color: #D2691E;
-                font-size: 11px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                font-style: italic;
-            }
-        """)
         
-        header_layout.addWidget(title)
-        header_layout.addWidget(subtitle)
-        header_frame.setLayout(header_layout)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
         
-        header_container_layout = QVBoxLayout(header_container)
-        header_container_layout.setContentsMargins(0, 0, 0, 0)
-        header_container_layout.addWidget(header_frame)
+        return header
+    
+    def create_content_section(self):
+        """Create modern content section"""
+        content = QFrame()
+        content.setObjectName("LoginCardContent")
         
-        # Form section - fixed height
-        form_container = QWidget()
-        form_container.setFixedHeight(300)
-        form_layout = QVBoxLayout(form_container)
-        form_layout.setContentsMargins(0, 15, 0, 0)
-        form_layout.setSpacing(12)
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(12)
         
-        # Section label
-        credentials_label = QLabel("Your Kitchen Access:")
-        credentials_label.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 15px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-        """)
+        # Input fields container
+        inputs_container = QFrame()
+        inputs_container.setObjectName("LoginInputsContainer")
         
-        # Input fields
-        self.username_input = VintageLineEdit("Your chef name")
-        self.password_input = VintageLineEdit("Secret recipe code")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        inputs_layout = QVBoxLayout(inputs_container)
+        inputs_layout.setContentsMargins(0, 0, 0, 0)
+        inputs_layout.setSpacing(10)
         
-        # Remember me
-        self.remember_checkbox = QCheckBox("Keep my apron on")
-        self.remember_checkbox.setStyleSheet("""
-            QCheckBox {
-                color: #8B4513;
-                font-size: 13px;
-                font-family: 'Georgia', serif;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border-radius: 4px;
-                border: 2px solid #D2691E;
-                background: #FFFFFF;
-            }
-            QCheckBox::indicator:checked {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 #FF6347, stop: 1 #D2691E);
-                border-color: #8B4513;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #8B4513;
-            }
-        """)
+        # Username field
+        username_container = self.create_input_field(
+            "Username", "Enter your username", False
+        )
+        self.username_input = username_container.findChild(QLineEdit)
+        
+        # Password field  
+        password_container = self.create_input_field(
+            "Password", "Enter your password", True
+        )
+        self.password_input = password_container.findChild(QLineEdit)
+        
+        inputs_layout.addWidget(username_container)
+        inputs_layout.addWidget(password_container)
+        
+        # Options container
+        options_container = QFrame()
+        options_container.setObjectName("LoginOptionsContainer")
+        
+        options_layout = QHBoxLayout(options_container)
+        options_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.remember_checkbox = QCheckBox("Remember me")
+        self.remember_checkbox.setObjectName("LoginRememberCheckbox")
+        
+        forgot_link = QLabel("Forgot password?")
+        forgot_link.setObjectName("LoginForgotLink")
+        forgot_link.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        
+        options_layout.addWidget(self.remember_checkbox)
+        options_layout.addStretch()
+        options_layout.addWidget(forgot_link)
         
         # Login button
-        self.login_button = ChefButton("Start Cooking!", "primary")
+        self.login_button = QPushButton("Sign In")
+        self.login_button.setObjectName("LoginSubmitButton")
         self.login_button.clicked.connect(self.handle_login)
         
-        form_layout.addWidget(credentials_label)
-        form_layout.addWidget(self.username_input)
-        form_layout.addWidget(self.password_input)
-        form_layout.addWidget(self.remember_checkbox)
-        form_layout.addSpacing(10)
-        form_layout.addWidget(self.login_button)
-        form_layout.addStretch()
+        layout.addWidget(inputs_container)
+        layout.addWidget(options_container)
+        layout.addWidget(self.login_button)
         
-        # Bottom section - fixed height
-        bottom_container = QWidget()
-        bottom_container.setFixedHeight(60)
-        bottom_layout = QHBoxLayout(bottom_container)
-        bottom_layout.setAlignment(Qt.AlignCenter)
-        bottom_layout.setSpacing(8)
+        return content
+    
+    def create_footer_section(self):
+        """Create modern footer section"""
+        footer = QFrame()
+        footer.setObjectName("LoginCardFooter")
+        footer.setFixedHeight(65)
         
-        no_account = QLabel("New to our kitchen?")
-        no_account.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 12px;
-                font-family: 'Georgia', serif;
-            }
-        """)
+        layout = QVBoxLayout(footer)
+        layout.setContentsMargins(16, 8, 16, 8)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(8)
         
-        self.register_link = ChefButton("Get Your Apron", "ghost")
+        # Divider
+        divider = QFrame()
+        divider.setObjectName("LoginDivider")
+        divider.setFixedHeight(1)
+        
+        # Switch to register
+        switch_container = QHBoxLayout()
+        switch_container.setAlignment(Qt.AlignCenter)
+        switch_container.setSpacing(8)
+        
+        switch_text = QLabel("Don't have an account?")
+        switch_text.setObjectName("LoginSwitchText")
+        
+        self.register_link = QPushButton("Sign Up")
+        self.register_link.setObjectName("LoginSwitchButton")
         self.register_link.clicked.connect(self.switch_to_register.emit)
         
-        bottom_layout.addWidget(no_account)
-        bottom_layout.addWidget(self.register_link)
+        switch_container.addWidget(switch_text)
+        switch_container.addWidget(self.register_link)
         
-        # Add all containers to main layout
-        main_layout.addWidget(header_container)
-        main_layout.addWidget(form_container)
-        main_layout.addWidget(bottom_container)
+        layout.addWidget(divider)
+        layout.addLayout(switch_container)
+        
+        return footer
+    
+    def create_input_field(self, label_text, placeholder, is_password=False):
+        """Create modern input field with label"""
+        container = QFrame()
+        container.setObjectName("InputFieldContainer")
+        
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        
+        label = QLabel(label_text)
+        label.setObjectName("InputFieldLabel")
+        
+        input_field = QLineEdit()
+        input_field.setObjectName("LoginFormInput")
+        input_field.setPlaceholderText(placeholder)
+        
+        if is_password:
+            input_field.setEchoMode(QLineEdit.EchoMode.Password)
+        
+        layout.addWidget(label)
+        layout.addWidget(input_field)
+        
+        return container
     
     def handle_login(self):
+        """Handle login button click"""
         username = self.username_input.text()
         password = self.password_input.text()
         self.login_requested.emit(username, password)
     
     def clear_form(self):
+        """Clear all form fields"""
         self.username_input.clear()
         self.password_input.clear()
         self.remember_checkbox.setChecked(False)
     
     def set_loading(self, loading: bool):
+        """Set loading state"""
         self.login_button.setEnabled(not loading)
-        self.login_button.setText("Cooking..." if loading else "Start Cooking!")
+        self.login_button.setText("Signing in..." if loading else "Sign In")
 
-class CookingRegisterCard(RecipeCard):
-    """Recipe-themed registration card with fixed structure"""
+class RegisterCard(QFrame):
+    """Registration card with modern structure matching home page design"""
     
     register_requested = Signal(str, str, str, str, str)
     switch_to_login = Signal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(400, 580)  # Fixed size prevents resizing
+        self.setObjectName("RegisterCard")
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup the recipe registration card with fixed layout"""
+        """Setup modern register card structure"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(30, 25, 30, 25)
-        main_layout.setSpacing(0)  # Control spacing manually
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(3)
         
-        # Header section - fixed height
-        header_container = QWidget()
-        header_container.setFixedHeight(70)
-        header_layout = QVBoxLayout(header_container)
-        header_layout.setContentsMargins(15, 10, 15, 10)
-        header_layout.setSpacing(2)
+        # Header section
+        header_section = self.create_header_section()
+        main_layout.addWidget(header_section)
         
-        header_frame = QFrame()
-        header_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 rgba(50, 205, 50, 0.3),
-                    stop: 0.5 rgba(34, 139, 34, 0.2),
-                    stop: 1 rgba(50, 205, 50, 0.3));
-                border: 2px dashed #228B22;
-                border-radius: 10px;
-            }
-        """)
+        # Form content section
+        content_section = self.create_content_section()
+        main_layout.addWidget(content_section)
         
-        title = QLabel("Join Our Kitchen!")
+        # Footer section
+        footer_section = self.create_footer_section()
+        main_layout.addWidget(footer_section)
+    
+    def create_header_section(self):
+        """Create bold modern header section"""
+        header = QFrame()
+        header.setObjectName("RegisterCardHeader")
+        header.setFixedHeight(65)
+        
+        layout = QVBoxLayout(header)
+        layout.setContentsMargins(20, 8, 20, 8)
+        layout.setSpacing(4)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        title = QLabel("Join ShareBite")
+        title.setObjectName("RegisterCardTitle")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("""
-            QLabel {
-                color: #006400;
-                font-size: 18px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-                text-shadow: 2px 2px 4px rgba(0, 100, 0, 0.3);
-            }
-        """)
         
-        subtitle = QLabel("Let's create your chef profile")
+        subtitle = QLabel("Start your culinary adventure today!")
+        subtitle.setObjectName("RegisterCardSubtitle")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("""
-            QLabel {
-                color: #228B22;
-                font-size: 11px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                font-style: italic;
-            }
-        """)
         
-        header_layout.addWidget(title)
-        header_layout.addWidget(subtitle)
-        header_frame.setLayout(header_layout)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
         
-        header_container_layout = QVBoxLayout(header_container)
-        header_container_layout.setContentsMargins(0, 0, 0, 0)
-        header_container_layout.addWidget(header_frame)
+        return header
+    
+    def create_content_section(self):
+        """Create modern content section"""
+        content = QFrame()
+        content.setObjectName("RegisterCardContent")
         
-        # Form section - fixed height
-        form_container = QWidget()
-        form_container.setFixedHeight(400)
-        form_layout = QVBoxLayout(form_container)
-        form_layout.setContentsMargins(0, 15, 0, 0)
-        form_layout.setSpacing(10)
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.setSpacing(10)
         
-        # Section label
-        profile_label = QLabel("Chef Profile Setup:")
-        profile_label.setStyleSheet("""
-            QLabel {
-                color: #006400;
-                font-size: 15px;
-                font-weight: 600;
-                font-family: 'Georgia', serif;
-            }
-        """)
+        # Input fields container
+        inputs_container = QFrame()
+        inputs_container.setObjectName("RegisterInputsContainer")
         
-        # Input fields
-        self.username_input = VintageLineEdit("Your chef nickname")
-        self.email_input = VintageLineEdit("Kitchen contact email")
-        self.password_input = VintageLineEdit("Secret pantry code")
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.confirm_password_input = VintageLineEdit("Confirm pantry code")
-        self.confirm_password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        inputs_layout = QVBoxLayout(inputs_container)
+        inputs_layout.setContentsMargins(0, 0, 0, 0)
+        inputs_layout.setSpacing(8)
         
-        # Bio area
+        # Username field
+        username_container = self.create_input_field(
+            "Username", "Choose a username"
+        )
+        self.username_input = username_container.findChild(QLineEdit)
+        
+        # Email field
+        email_container = self.create_input_field(
+            "Email", "Enter your email address"
+        )
+        self.email_input = email_container.findChild(QLineEdit)
+        
+        # Password field
+        password_container = self.create_input_field(
+            "Password", "Create password", True
+        )
+        self.password_input = password_container.findChild(QLineEdit)
+        
+        # Confirm Password field
+        confirm_container = self.create_input_field(
+            "Confirm Password", "Confirm password", True
+        )
+        self.confirm_password_input = confirm_container.findChild(QLineEdit)
+        
+        # Bio field
+        bio_container = QFrame()
+        bio_container.setObjectName("InputFieldContainer")
+        
+        bio_layout = QVBoxLayout(bio_container)
+        bio_layout.setContentsMargins(0, 0, 0, 0)
+        bio_layout.setSpacing(4)
+        
+        bio_label = QLabel("About You (Optional)")
+        bio_label.setObjectName("InputFieldLabel")
+        
         self.bio_input = QTextEdit()
-        self.bio_input.setPlaceholderText("Tell us about your cooking journey and favorite dishes...")
-        self.bio_input.setFixedHeight(60)
-        self.bio_input.setStyleSheet("""
-            QTextEdit {
-                background: #FFFFFF;
-                border: 2px solid #CD853F;
-                border-radius: 10px;
-                padding: 10px;
-                font-size: 13px;
-                color: #8B4513;
-                font-family: 'Georgia', serif;
-            }
-            QTextEdit:focus {
-                border: 3px solid #228B22;
-                background: #F0FFF0;
-            }
-        """)
+        self.bio_input.setObjectName("RegisterBioInput")
+        self.bio_input.setPlaceholderText("Tell us about your cooking journey...")
+        
+        bio_layout.addWidget(bio_label)
+        bio_layout.addWidget(self.bio_input)
         
         # Register button
-        self.register_button = ChefButton("Join the Kitchen!", "secondary")
+        self.register_button = QPushButton("Create Account")
+        self.register_button.setObjectName("RegisterSubmitButton")
         self.register_button.clicked.connect(self.handle_register)
         
-        form_layout.addWidget(profile_label)
-        form_layout.addWidget(self.username_input)
-        form_layout.addWidget(self.email_input)
-        form_layout.addWidget(self.password_input)
-        form_layout.addWidget(self.confirm_password_input)
-        form_layout.addWidget(self.bio_input)
-        form_layout.addSpacing(8)
-        form_layout.addWidget(self.register_button)
-        form_layout.addStretch()
+        inputs_layout.addWidget(username_container)
+        inputs_layout.addWidget(email_container)
+        inputs_layout.addWidget(password_container)
+        inputs_layout.addWidget(confirm_container)
+        inputs_layout.addWidget(bio_container)
         
-        # Bottom section - fixed height
-        bottom_container = QWidget()
-        bottom_container.setFixedHeight(60)
-        bottom_layout = QHBoxLayout(bottom_container)
-        bottom_layout.setAlignment(Qt.AlignCenter)
-        bottom_layout.setSpacing(8)
+        layout.addWidget(inputs_container)
+        layout.addWidget(self.register_button)
         
-        have_account = QLabel("Already have an apron?")
-        have_account.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 12px;
-                font-family: 'Georgia', serif;
-            }
-        """)
+        return content
+    
+    def create_footer_section(self):
+        """Create modern footer section"""
+        footer = QFrame()
+        footer.setObjectName("RegisterCardFooter")
+        footer.setFixedHeight(65)
         
-        self.login_link = ChefButton("Back to Kitchen", "ghost")
+        layout = QVBoxLayout(footer)
+        layout.setContentsMargins(16, 8, 16, 8)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(8)
+        
+        # Divider
+        divider = QFrame()
+        divider.setObjectName("RegisterDivider")
+        divider.setFixedHeight(1)
+        
+        # Switch to login
+        switch_container = QHBoxLayout()
+        switch_container.setAlignment(Qt.AlignCenter)
+        switch_container.setSpacing(8)
+        
+        switch_text = QLabel("Already have an account?")
+        switch_text.setObjectName("RegisterSwitchText")
+        
+        self.login_link = QPushButton("Sign In")
+        self.login_link.setObjectName("RegisterSwitchButton")
         self.login_link.clicked.connect(self.switch_to_login.emit)
         
-        bottom_layout.addWidget(have_account)
-        bottom_layout.addWidget(self.login_link)
+        switch_container.addWidget(switch_text)
+        switch_container.addWidget(self.login_link)
         
-        # Add all containers to main layout
-        main_layout.addWidget(header_container)
-        main_layout.addWidget(form_container)
-        main_layout.addWidget(bottom_container)
+        layout.addWidget(divider)
+        layout.addLayout(switch_container)
+        
+        return footer
+    
+    def create_input_field(self, label_text, placeholder, is_password=False):
+        """Create modern input field with label"""
+        container = QFrame()
+        container.setObjectName("InputFieldContainer")
+        
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        
+        label = QLabel(label_text)
+        label.setObjectName("InputFieldLabel")
+        
+        input_field = QLineEdit()
+        input_field.setObjectName("RegisterFormInput")
+        input_field.setPlaceholderText(placeholder)
+        
+        if is_password:
+            input_field.setEchoMode(QLineEdit.EchoMode.Password)
+        
+        layout.addWidget(label)
+        layout.addWidget(input_field)
+        
+        return container
     
     def handle_register(self):
+        """Handle registration button click"""
         username = self.username_input.text()
         email = self.email_input.text()
         password = self.password_input.text()
@@ -479,6 +395,7 @@ class CookingRegisterCard(RecipeCard):
         self.register_requested.emit(username, email, password, confirm_password, bio)
     
     def clear_form(self):
+        """Clear all form fields"""
         self.username_input.clear()
         self.email_input.clear()
         self.password_input.clear()
@@ -486,262 +403,272 @@ class CookingRegisterCard(RecipeCard):
         self.bio_input.clear()
     
     def set_loading(self, loading: bool):
+        """Set loading state"""
         self.register_button.setEnabled(not loading)
-        self.register_button.setText("Joining Kitchen..." if loading else "Join the Kitchen!")
+        self.register_button.setText("Creating account..." if loading else "Create Account")
 
-class KitchenSidebar(QFrame):
-    """Kitchen-themed sidebar with fixed structure"""
+class LoginSidebar(QFrame):
+    """Login sidebar with features"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedSize(300, 600)  # Fixed size
+        self.setObjectName("LoginLeftSection")
         self.setup_ui()
     
     def setup_ui(self):
-        self.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 #8B4513,
-                    stop: 0.3 #A0522D,
-                    stop: 0.7 #CD853F,
-                    stop: 1 #D2691E);
-                border-right: 4px solid #8B4513;
-            }
-        """)
-        
+        """Setup sidebar UI"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(25, 30, 25, 30)
-        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setSpacing(15)
         
-        # Brand section - fixed height
-        brand_container = QWidget()
-        brand_container.setFixedHeight(180)
-        brand_layout = QVBoxLayout(brand_container)
-        brand_layout.setSpacing(8)
+        # Hero section
+        hero_container = QFrame()
+        hero_container.setObjectName("LoginHeroContainer")
         
-        # Logo frame
-        logo_frame = QFrame()
-        logo_frame.setStyleSheet("""
-            QFrame {
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 rgba(255, 255, 255, 0.9),
-                    stop: 1 rgba(255, 248, 220, 0.9));
-                border: 3px solid #8B4513;
-                border-radius: 15px;
-            }
-        """)
+        hero_layout = QVBoxLayout(hero_container)
+        hero_layout.setAlignment(Qt.AlignCenter)
+        hero_layout.setSpacing(15)
+        hero_layout.setContentsMargins(20, 20, 20, 20)
         
-        logo_layout = QVBoxLayout(logo_frame)
-        logo_layout.setContentsMargins(15, 15, 15, 15)
-        logo_layout.setSpacing(2)
+        hero_title = QLabel("Welcome to\nShareBite!")
+        hero_title.setObjectName("LoginHeroTitle")
+        hero_title.setAlignment(Qt.AlignCenter)
+        hero_title.setWordWrap(True)
         
-        logo1 = QLabel("Recipe")
-        logo1.setAlignment(Qt.AlignCenter)
-        logo1.setStyleSheet("""
-            QLabel {
-                color: #8B4513;
-                font-size: 32px;
-                font-weight: 800;
-                font-family: 'Georgia', serif;
-                text-shadow: 3px 3px 6px rgba(139, 69, 19, 0.4);
-            }
-        """)
+        hero_subtitle = QLabel("Join our vibrant community of food lovers and recipe creators!")
+        hero_subtitle.setObjectName("LoginHeroSubtitle")
+        hero_subtitle.setAlignment(Qt.AlignCenter)
+        hero_subtitle.setWordWrap(True)
         
-        logo2 = QLabel("Share")
-        logo2.setAlignment(Qt.AlignCenter)
-        logo2.setStyleSheet("""
-            QLabel {
-                color: #D2691E;
-                font-size: 32px;
-                font-weight: 800;
-                font-family: 'Georgia', serif;
-                text-shadow: 3px 3px 6px rgba(210, 105, 30, 0.4);
-                margin-top: -8px;
-            }
-        """)
+        hero_layout.addWidget(hero_title)
+        hero_layout.addWidget(hero_subtitle)
         
-        tagline = QLabel("Where Flavors Meet Friends")
-        tagline.setAlignment(Qt.AlignCenter)
-        tagline.setWordWrap(True)
-        tagline.setStyleSheet("""
-            QLabel {
-                color: #654321;
-                font-size: 13px;
-                font-weight: 500;
-                font-family: 'Georgia', serif;
-                font-style: italic;
-            }
-        """)
+        # Stats section
+        stats_container = QFrame()
+        stats_container.setObjectName("LoginStatsContainer")
         
-        logo_layout.addWidget(logo1)
-        logo_layout.addWidget(logo2)
-        logo_layout.addWidget(tagline)
+        stats_layout = QVBoxLayout(stats_container)
+        stats_layout.setContentsMargins(15, 15, 15, 15)
+        stats_layout.setSpacing(10)
         
-        brand_layout.addWidget(logo_frame)
+        stats_title = QLabel("Join Thousands!")
+        stats_title.setObjectName("LoginStatsTitle")
+        stats_title.setAlignment(Qt.AlignCenter)
         
-        # Features section - fixed height
-        features_container = QWidget()
-        features_container.setFixedHeight(320)
-        features_layout = QVBoxLayout(features_container)
-        features_layout.setContentsMargins(0, 20, 0, 0)
-        features_layout.setSpacing(12)
+        stats_grid = QFrame()
+        stats_grid.setObjectName("LoginStatsGrid")
         
-        features_frame = QFrame()
-        features_frame.setStyleSheet("""
-            QFrame {
-                background: rgba(255, 255, 255, 0.15);
-                border: 2px solid rgba(255, 255, 255, 0.3);
-                border-radius: 12px;
-            }
-        """)
+        grid_layout = QHBoxLayout(stats_grid)
+        grid_layout.setSpacing(10)
         
-        features_inner_layout = QVBoxLayout(features_frame)
-        features_inner_layout.setContentsMargins(20, 20, 20, 20)
-        features_inner_layout.setSpacing(15)
-        
-        features_title = QLabel("Kitchen Features")
-        features_title.setAlignment(Qt.AlignCenter)
-        features_title.setStyleSheet("""
-            QLabel {
-                color: #FFFFFF;
-                font-size: 16px;
-                font-weight: 700;
-                font-family: 'Georgia', serif;
-                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            }
-        """)
-        
-        features = [
-            ("Share Recipes", "Upload your family secrets"),
-            ("Discover Flavors", "Explore world cuisines"),
-            ("Save Favorites", "Build your collection"),
-            ("Chef Assistant", "Get AI cooking tips"),
-            ("Track Progress", "Monitor your journey")
+        # Create stat items
+        stats = [
+            ("15K+", "Recipes"),
+            ("8K+", "Chefs"), 
+            ("50K+", "Likes")
         ]
         
-        features_inner_layout.addWidget(features_title)
+        for number, label in stats:
+            stat_item = self.create_stat_item(number, label)
+            grid_layout.addWidget(stat_item)
         
-        for title, desc in features:
-            feature_frame = QFrame()
-            feature_frame.setFixedHeight(40)
-            feature_frame.setStyleSheet("""
-                QFrame {
-                    background: rgba(255, 99, 71, 0.2);
-                    border-left: 4px solid #FF6347;
-                    border-radius: 6px;
-                }
-                QFrame:hover {
-                    background: rgba(255, 99, 71, 0.3);
-                    border-left: 4px solid #FF4500;
-                }
-            """)
-            
-            feature_layout = QVBoxLayout(feature_frame)
-            feature_layout.setContentsMargins(10, 6, 10, 6)
-            feature_layout.setSpacing(2)
-            
-            feature_title = QLabel(title)
-            feature_title.setStyleSheet("""
-                QLabel {
-                    color: #FFFFFF;
-                    font-size: 12px;
-                    font-weight: 700;
-                    font-family: 'Georgia', serif;
-                }
-            """)
-            
-            feature_desc = QLabel(desc)
-            feature_desc.setStyleSheet("""
-                QLabel {
-                    color: rgba(255, 255, 255, 0.9);
-                    font-size: 10px;
-                    font-weight: 400;
-                    font-family: 'Georgia', serif;
-                }
-            """)
-            
-            feature_layout.addWidget(feature_title)
-            feature_layout.addWidget(feature_desc)
-            
-            features_inner_layout.addWidget(feature_frame)
+        stats_layout.addWidget(stats_title)
+        stats_layout.addWidget(stats_grid)
         
-        features_layout.addWidget(features_frame)
+        # Features section
+        features_container = QFrame()
+        features_container.setObjectName("LoginFeaturesContainer")
         
-        # Add containers to main layout
-        main_layout.addWidget(brand_container)
+        features_layout = QVBoxLayout(features_container)
+        features_layout.setSpacing(10)
+        features_layout.setContentsMargins(15, 15, 15, 15)
+        
+        features_title = QLabel("What You'll Love")
+        features_title.setObjectName("LoginFeaturesTitle")
+        features_title.setAlignment(Qt.AlignCenter)
+        
+        features = [
+            ("Share Instantly", "Upload recipes in seconds"),
+            ("Global Community", "Connect with chefs worldwide"),
+            ("Smart Discovery", "Find recipes you'll love"),
+            ("Save Favorites", "Build your cookbook")
+        ]
+        
+        features_list = QFrame()
+        features_list.setObjectName("LoginFeaturesList")
+        
+        features_list_layout = QVBoxLayout(features_list)
+        features_list_layout.setSpacing(8)
+        
+        for title, description in features:
+            feature_item = self.create_feature_item(title, description)
+            features_list_layout.addWidget(feature_item)
+        
+        features_layout.addWidget(features_title)
+        features_layout.addWidget(features_list)
+        
+        main_layout.addWidget(hero_container)
+        main_layout.addWidget(stats_container)
         main_layout.addWidget(features_container)
         main_layout.addStretch()
+    
+    def create_stat_item(self, number, label):
+        """Create individual stat item"""
+        item = QFrame()
+        item.setObjectName("LoginStatItem")
+        
+        layout = QVBoxLayout(item)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(4)
+        layout.setContentsMargins(8, 8, 8, 8)
+        
+        number_label = QLabel(number)
+        number_label.setObjectName("LoginStatNumber")
+        number_label.setAlignment(Qt.AlignCenter)
+        
+        text_label = QLabel(label)
+        text_label.setObjectName("LoginStatLabel")
+        text_label.setAlignment(Qt.AlignCenter)
+        
+        layout.addWidget(number_label)
+        layout.addWidget(text_label)
+        
+        return item
+    
+    def create_feature_item(self, title, description):
+        """Create feature item"""
+        item = QFrame()
+        item.setObjectName("LoginFeatureItem")
+        
+        layout = QVBoxLayout(item)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(2)
+        
+        title_label = QLabel(title)
+        title_label.setObjectName("LoginFeatureTitle")
+        
+        desc_label = QLabel(description)
+        desc_label.setObjectName("LoginFeatureDesc")
+        desc_label.setWordWrap(True)
+        
+        layout.addWidget(title_label)
+        layout.addWidget(desc_label)
+        
+        return item
 
 class LoginView(QWidget):
-    """
-    Recipe-themed login interface with fixed component structure
-    Prevents resizing issues by using fixed sizes throughout
-    """
+    """Main login interface with scroll support"""
     
     login_requested = Signal(str, str)
     register_requested = Signal(str, str, str, str, str)
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("LoginView")
         self.setup_ui()
         self.setup_connections()
     
     def setup_ui(self):
-        """Setup the cooking-themed main UI with fixed structure"""
-        self.setWindowTitle("Recipe Share - Your Culinary Journey Starts Here")
-        self.setFixedSize(800, 600)  # Fixed window size
+        """Setup main login UI with scroll support"""
+        self.setWindowTitle("ShareBite - Sign In")
+        # Set reasonable window size
+        self.setMinimumSize(700, 500)
+        self.setMaximumSize(800, 650)
+        self.resize(750, 580)
         
-        # Warm kitchen gradient background
-        self.setStyleSheet("""
-            QWidget {
-                background: qradialgradient(cx: 0.3, cy: 0.3, radius: 1.2,
-                    stop: 0 #FFF8DC,
-                    stop: 0.4 #FFFACD,
-                    stop: 0.8 #F5DEB3,
-                    stop: 1 #DEB887);
-            }
-        """)
+        # Create scroll area
+        scroll_area = QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.NoFrame)
         
-        # Main horizontal layout with fixed structure
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        # Create scrollable content widget
+        content_widget = QWidget()
+        content_widget.setObjectName("LoginContentWidget")
         
-        # Kitchen sidebar - fixed width
-        self.sidebar = KitchenSidebar()
-        main_layout.addWidget(self.sidebar)
+        # Main layout for the window
+        window_layout = QVBoxLayout(self)
+        window_layout.setContentsMargins(0, 0, 0, 0)
+        window_layout.addWidget(scroll_area)
         
-        # Content area - fixed width
-        content_container = QWidget()
-        content_container.setFixedSize(500, 600)
-        content_layout = QVBoxLayout(content_container)
-        content_layout.setAlignment(Qt.AlignCenter)
-        content_layout.setContentsMargins(50, 50, 50, 50)
-        content_layout.setSpacing(20)
+        # Content layout
+        content_layout = QHBoxLayout(content_widget)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
         
-        # Stacked widget for recipe cards
+        # Left sidebar
+        self.sidebar = LoginSidebar()
+        content_layout.addWidget(self.sidebar)
+        
+        # Right section - auth forms
+        right_section = self.create_right_section()
+        content_layout.addWidget(right_section)
+        
+        # Set the content widget to scroll area
+        scroll_area.setWidget(content_widget)
+        
+        # Loading indicator
+        self.setup_loading_indicator()
+    
+    def create_right_section(self):
+        """Create right authentication section"""
+        right = QFrame()
+        right.setObjectName("LoginRightSection")
+        
+        layout = QVBoxLayout(right)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        # Auth cards container
+        cards_container = QFrame()
+        cards_container.setObjectName("LoginCardsContainer")
+        
+        cards_layout = QVBoxLayout(cards_container)
+        cards_layout.setContentsMargins(0, 0, 0, 0)
+        cards_layout.setSpacing(0)
+        
+        # Stacked widget for forms
         self.stacked_widget = QStackedWidget()
-        self.stacked_widget.setFixedSize(400, 580)  # Fixed size for cards
+        self.stacked_widget.setObjectName("LoginStackedWidget")
         
-        # Login recipe card
-        self.login_card = CookingLoginCard()
+        # Create and add cards
+        self.login_card = LoginCard()
+        self.register_card = RegisterCard()
+        
         self.stacked_widget.addWidget(self.login_card)
-        
-        # Register recipe card
-        self.register_card = CookingRegisterCard()
         self.stacked_widget.addWidget(self.register_card)
         
-        # Message display with fixed positioning
+        cards_layout.addWidget(self.stacked_widget)
+        
+        # Message label
         self.message_label = QLabel()
+        self.message_label.setObjectName("LoginMessageLabel")
         self.message_label.setAlignment(Qt.AlignCenter)
         self.message_label.setWordWrap(True)
-        self.message_label.setFixedHeight(30)
         self.message_label.hide()
         
-        content_layout.addWidget(self.stacked_widget)
-        content_layout.addWidget(self.message_label)
+        layout.addWidget(cards_container)
+        layout.addWidget(self.message_label)
         
-        main_layout.addWidget(content_container)
+        return right
+    
+    def setup_loading_indicator(self):
+        """Setup loading indicator"""
+        self.loading_indicator = QFrame(self)
+        self.loading_indicator.setObjectName("LoginLoadingIndicator")
+        
+        layout = QVBoxLayout(self.loading_indicator)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        loading_icon = QLabel("Loading...")
+        loading_icon.setObjectName("LoginLoadingIcon")
+        loading_icon.setAlignment(Qt.AlignCenter)
+        
+        layout.addWidget(loading_icon)
+        self.loading_indicator.hide()
     
     def setup_connections(self):
         """Setup signal connections"""
@@ -764,50 +691,29 @@ class LoginView(QWidget):
         self.hide_message()
     
     def show_message(self, message: str, is_error: bool = True):
-        """Show recipe note styled messages"""
+        """Show message with styling"""
         self.message_label.setText(message)
+        self.message_label.setProperty("error", str(is_error).lower())
         
-        if is_error:
-            self.message_label.setStyleSheet("""
-                QLabel {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #FFE4E1,
-                        stop: 1 #FFC0CB);
-                    color: #8B0000;
-                    font-size: 12px;
-                    font-weight: 600;
-                    font-family: 'Georgia', serif;
-                    padding: 8px 15px;
-                    border: 2px solid #DC143C;
-                    border-radius: 8px;
-                    border-left: 4px solid #B22222;
-                }
-            """)
-        else:
-            self.message_label.setStyleSheet("""
-                QLabel {
-                    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 #F0FFF0,
-                        stop: 1 #E6FFE6);
-                    color: #006400;
-                    font-size: 12px;
-                    font-weight: 600;
-                    font-family: 'Georgia', serif;
-                    padding: 8px 15px;
-                    border: 2px solid #32CD32;
-                    border-radius: 8px;
-                    border-left: 4px solid #228B22;
-                }
-            """)
+        # Force style refresh
+        self.message_label.style().unpolish(self.message_label)
+        self.message_label.style().polish(self.message_label)
         
         self.message_label.show()
+        QTimer.singleShot(5000, self.hide_message)
     
     def hide_message(self):
         """Hide message label"""
         self.message_label.hide()
     
     def set_loading(self, loading: bool):
-        """Set loading state for current form"""
+        """Set loading state"""
+        if loading:
+            self.loading_indicator.show()
+            self.loading_indicator.raise_()
+        else:
+            self.loading_indicator.hide()
+        
         current_widget = self.stacked_widget.currentWidget()
         if current_widget:
             current_widget.set_loading(loading)
