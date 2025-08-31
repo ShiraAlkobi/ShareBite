@@ -3,13 +3,9 @@ import json
 from typing import Dict, Any, Optional, List
 
 class OllamaClient:
-    """
-    Optimized Ollama client for fast responses
-    """
-    
-    def __init__(self, base_url: str = "http://localhost:11434"):
+    def __init__(self, base_url: str = "http://localhost:11434"):  # Change this
         self.base_url = base_url
-        self.model_name = "mistral:7b-instruct-q4_0"
+        self.model_name = "mistral:7b-instruct-q4_0" 
         
     def test_connection(self) -> bool:
         """Test Ollama availability"""

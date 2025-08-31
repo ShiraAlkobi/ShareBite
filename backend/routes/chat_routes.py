@@ -133,3 +133,131 @@ async def get_chat_service_status():
             "service_status": "unhealthy",
             "message": f"Service error: {str(e)}"
         }
+    
+# Add this to your existing chat_routes.py or create a new endpoint in recipe_routes.py
+
+# Add this to your existing chat_routes.py or create a new endpoint in recipe_routes.py
+
+from fastapi import APIRouter, HTTPException, Depends, status
+from pydantic import BaseModel
+from typing import Dict, Any
+from routes.auth_routes import verify_token
+import requests
+import json
+
+# Add this to your existing router
+class RecipeContextChatRequest(BaseModel):
+    message: str
+    recipe_context: Dict[str, Any]
+
+class SimpleChatResponse(BaseModel):
+    response: str
+
+@router.post("/recipe-chat", response_model=SimpleChatResponse)
+async def recipe_context_chat(
+    chat_request: RecipeContextChatRequest,
+    current_user: dict = Depends(verify_token)
+):
+    """
+    Direct chat with Ollama using recipe context - no database search
+    Fast response for recipe-specific questions
+    """
+    try:
+        user_id = current_user['userid']
+        username = current_user['username']
+        
+        print(f"Direct recipe chat from {username}: {chat_request.message[:50]}...")
+        
+        # Validate inputs
+        if not chat_request.message or not chat_request.message.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Message cannot be empty"
+            )
+        
+        # Create focused prompt
+        prompt = create_recipe_focused_prompt(chat_request.message, chat_request.recipe_context)
+        
+        # Call Ollama directly
+        ollama_url = "http://localhost:11434"  # Update this to your Docker URL
+        
+        ollama_payload = {
+            "model": "mistral:7b-instruct-q4_0",  # Update to your model name
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": 0.3,      # Lower for faster, more focused responses
+                "top_p": 0.8,           # Reduced for speed
+                "num_predict": 150,     # Much shorter responses for speed
+                "num_ctx": 1024,        # Smaller context window
+                "repeat_penalty": 1.1,
+                "stop": ["\n\nUser:", "\n\nHuman:", "###", "\n\n"]
+            }
+        }
+        
+        print(f"Calling Ollama at: {ollama_url}/api/generate")
+        
+        try:
+            ollama_response = requests.post(
+                f"{ollama_url}/api/generate",
+                json=ollama_payload,
+                timeout=60  # 60 second timeout
+            )
+            
+            if ollama_response.status_code == 200:
+                ai_data = ollama_response.json()
+                ai_response = ai_data.get("response", "I couldn't generate a response.").strip()
+                
+                if not ai_response:
+                    ai_response = "I couldn't generate a response. Please try rephrasing your question."
+                
+                print(f"Ollama response generated: {len(ai_response)} chars")
+                
+                return SimpleChatResponse(response=ai_response)
+            else:
+                print(f"Ollama error: {ollama_response.status_code} - {ollama_response.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="AI service error"
+                )
+                
+        except requests.exceptions.Timeout:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="AI response timed out"
+            )
+        except requests.exceptions.ConnectionError:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Cannot connect to AI service. Make sure Ollama is running."
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Recipe chat error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to process chat request"
+        )
+
+def create_recipe_focused_prompt(user_message: str, recipe_context: Dict[str, Any]) -> str:
+    """Create a very concise prompt for fast responses"""
+    
+    # Extract only essential recipe data
+    title = recipe_context.get('title', 'Unknown Recipe')
+    ingredients = recipe_context.get('ingredients', 'No ingredients')[:200]  # Limit length
+    instructions = recipe_context.get('instructions', 'No instructions')[:300]  # Limit length
+    
+    # Create ultra-concise prompt for speed
+    prompt = f"""Recipe: {title}
+
+Ingredients: {ingredients}
+
+Instructions: {instructions}
+
+Question: {user_message}
+
+Answer briefly and directly:"""
+    
+    return prompt

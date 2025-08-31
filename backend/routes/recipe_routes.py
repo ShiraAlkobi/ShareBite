@@ -481,3 +481,97 @@ async def get_user_stats(current_user: dict = Depends(verify_token)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user statistics"
         )
+    # Add this to your recipe_routes.py file
+
+@router.get("/{recipe_id}", response_model=RecipeResponse)
+async def get_recipe_by_id(
+    recipe_id: int,
+    current_user: dict = Depends(verify_token)
+):
+    """
+    Get a specific recipe by ID with user-specific like/favorite status
+    """
+    try:
+        user_id = current_user['userid']
+        print(f"Getting recipe {recipe_id} for user: {current_user['username']} (ID: {user_id})")
+        
+        # Query to get recipe with user-specific like/favorite status
+        query = """
+        SELECT 
+            r.RecipeID,
+            r.Title,
+            r.Description,
+            r.Ingredients,
+            r.Instructions,
+            r.ImageURL,
+            r.RawIngredients,
+            r.Servings,
+            r.CreatedAt,
+            r.AuthorID,
+            u.Username as AuthorName,
+            (SELECT COUNT(*) FROM Likes WHERE RecipeID = r.RecipeID) as LikesCount,
+            CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = r.RecipeID AND UserID = ?) 
+                 THEN 1 ELSE 0 END as IsLiked,
+            CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = r.RecipeID AND UserID = ?) 
+                 THEN 1 ELSE 0 END as IsFavorited
+        FROM Recipes r
+        JOIN Users u ON r.AuthorID = u.UserID
+        WHERE r.RecipeID = ?
+        """
+        
+        # Execute query
+        recipe_data = execute_query(query, (user_id, user_id, recipe_id), fetch="one")
+        
+        if not recipe_data or len(recipe_data) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Recipe with ID {recipe_id} not found"
+            )
+        
+        # Get the first (and only) result
+        row = recipe_data[0]
+        
+        print(f"Retrieved recipe: {row.get('Title', 'Untitled')}")
+        
+        # Format created_at
+        created_at_str = datetime.now().isoformat()
+        if row.get('CreatedAt'):
+            if isinstance(row['CreatedAt'], str):
+                created_at_str = row['CreatedAt']
+            else:
+                try:
+                    created_at_str = row['CreatedAt'].isoformat()
+                except:
+                    created_at_str = str(row['CreatedAt'])
+        
+        # Build response
+        recipe_response = RecipeResponse(
+            recipe_id=row['RecipeID'],
+            title=row.get('Title') or "Untitled Recipe",
+            description=row.get('Description') or "",
+            author_name=row.get('AuthorName') or "Unknown Chef",
+            author_id=row['AuthorID'],
+            image_url=row.get('ImageURL'),
+            ingredients=row.get('Ingredients'),
+            instructions=row.get('Instructions'),
+            raw_ingredients=row.get('RawIngredients'),
+            servings=row.get('Servings'),
+            created_at=created_at_str,
+            likes_count=row.get('LikesCount') or 0,
+            is_liked=bool(row.get('IsLiked')),
+            is_favorited=bool(row.get('IsFavorited'))
+        )
+        
+        print(f"Returning recipe details for: {recipe_response.title}")
+        return recipe_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting recipe by ID: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve recipe: {str(e)}"
+        )

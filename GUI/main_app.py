@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from presenters.login_presenter import LoginPresenter
 from presenters.home_presenter import HomePresenter
-# from presenters.profile_presenter import ProfilePresenter
+from presenters.recipe_details_presenter import RecipeDetailsPresenter
 from models.login_model import UserData
 
 
@@ -24,6 +24,7 @@ class MainWindow(QMainWindow):
         # Presenters for different views
         self.login_presenter = None
         self.home_presenter = None
+        self.recipe_details_presenter = None
         
         self.setup_ui()
         self.setup_authentication()
@@ -48,7 +49,7 @@ class MainWindow(QMainWindow):
         self.login_presenter.authentication_successful.connect(self.on_authentication_success)
         self.login_presenter.authentication_failed.connect(self.on_authentication_failed)
         
-        # Show login view iniftially
+        # Show login view initially
         self.show_login()
     
     def show_login(self):
@@ -80,7 +81,7 @@ class MainWindow(QMainWindow):
         self.current_user = user_data
         self.access_token = access_token
         
-        print(f"🎉 Authentication successful!")
+        print(f"Authentication successful!")
         print(f"   User: {user_data.username}")
         print(f"   Email: {user_data.email}")
         print(f"   Token: {access_token[:20]}...")
@@ -98,12 +99,12 @@ class MainWindow(QMainWindow):
         Args:
             error_message (str): Error message
         """
-        print(f"❌ Authentication failed: {error_message}")
+        print(f"Authentication failed: {error_message}")
         # Login view will handle showing the error
     
     def show_home_view(self):
         """Initialize and show home view"""
-        print("🏠 Initializing home view...")
+        print("Initializing home view...")
         
         # Create home presenter with user data and token
         self.home_presenter = HomePresenter(
@@ -119,11 +120,10 @@ class MainWindow(QMainWindow):
         self.home_presenter.logout_requested.connect(self.handle_logout)
         
         # Show home view
-        # self.home_presenter.show_view()
         home_widget = self.home_presenter.get_view()
 
         try:
-            with open('GUI/themes/home_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
                 home_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Home theme file not found")
@@ -136,30 +136,82 @@ class MainWindow(QMainWindow):
         # Update window title
         self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
 
-    
     def show_recipe_details(self, recipe_id: int):
         """
-        Show recipe details window (future implementation)
+        Show recipe details window in the stack
         
         Args:
             recipe_id (int): Recipe ID to display
         """
-        print(f"📖 Opening recipe details for recipe {recipe_id}")
-        # TODO: Implement recipe details presenter/view
-        # recipe_details_presenter = RecipeDetailsPresenter(recipe_id, self.access_token)
-        # recipe_details_presenter.show_view()
+        print(f"Opening recipe details for recipe {recipe_id}")
+        
+        # Create recipe details presenter if not exists
+        if not self.recipe_details_presenter:
+            self.recipe_details_presenter = RecipeDetailsPresenter(
+                access_token=self.access_token,
+                base_url="http://127.0.0.1:8000"
+            )
+            
+            # Connect recipe details signals
+            self.recipe_details_presenter.back_to_home_requested.connect(self.show_home_from_recipe_details)
+            self.recipe_details_presenter.recipe_updated.connect(self.on_recipe_updated)
+        
+        # Load recipe details
+        self.recipe_details_presenter.load_recipe_details(recipe_id)
+        
+        # Add to stack and show
+        recipe_details_widget = self.recipe_details_presenter.get_view()
+        
+        # Apply recipe details theme
+        try:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
+                recipe_details_widget.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print("Recipe details theme file not found, trying home theme")
+            try:
+                with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+                    recipe_details_widget.setStyleSheet(f.read())
+            except FileNotFoundError:
+                print("No theme files found")
+        
+        if self.stack.indexOf(recipe_details_widget) == -1:
+            self.stack.addWidget(recipe_details_widget)
+        
+        self.stack.setCurrentWidget(recipe_details_widget)
+        
+        # Update window title
+        self.setWindowTitle(f"Recipe Details - {self.current_user.username}")
+    
+    def show_home_from_recipe_details(self):
+        """Return to home view from recipe details"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
+    
+    def on_recipe_updated(self, recipe_id: int):
+        """
+        Handle recipe update notification from recipe details
+        This can refresh the home feed if needed
+        """
+        print(f"Recipe {recipe_id} was updated (liked/favorited)")
+        
+        # Optionally refresh home view data
+        if self.home_presenter:
+            # You could call a refresh method on home presenter here
+            # self.home_presenter.refresh_recipe_in_feed(recipe_id)
+            pass
     
     def show_add_recipe(self):
         """Show add recipe window (future implementation)"""
-        print("➕ Opening add recipe form")
+        print("Opening add recipe form")
         # TODO: Implement add recipe presenter/view
         # add_recipe_presenter = AddRecipePresenter(self.access_token)
         # add_recipe_presenter.show_view()
 
-
     def show_profile_view(self):
         """Show profile view in the same window"""
-        # print("📊 Opening profile view...")
+        # print("Opening profile view...")
         
         # if not self.profile_presenter:
         #     # Create profile presenter with same user data and token
@@ -188,6 +240,7 @@ class MainWindow(QMainWindow):
         
         # self.stack.setCurrentWidget(profile_widget)
         # self.setWindowTitle(f"Profile - {self.current_user.username}")
+        pass
     
     def show_home_from_profile(self):
         """Return to home view from profile"""
@@ -196,23 +249,26 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(home_widget)
             self.setWindowTitle(f"ShareBite - {self.current_user.username}")
 
-            
     def show_user_profile(self):
         """Show user profile window (future implementation)"""
-        print(f"👤 Opening profile for user {self.current_user.username}")
+        print(f"Opening profile for user {self.current_user.username}")
         # TODO: Implement user profile presenter/view
         # profile_presenter = ProfilePresenter(self.current_user, self.access_token)
         # profile_presenter.show_view()
     
     def handle_logout(self):
         """Handle user logout"""
-        print("👋 User logout requested")
+        print("User logout requested")
         
         # Clean up current session
         if self.home_presenter:
             self.home_presenter.close_view()
             self.home_presenter.cleanup()
             self.home_presenter = None
+        
+        if self.recipe_details_presenter:
+            self.recipe_details_presenter.cleanup()
+            self.recipe_details_presenter = None
         
         self.current_user = None
         self.access_token = None
@@ -225,7 +281,7 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Handle application close event"""
-        print("🚪 Application closing...")
+        print("Application closing...")
         
         # Clean up all presenters
         if self.login_presenter:
@@ -234,6 +290,9 @@ class MainWindow(QMainWindow):
         if self.home_presenter:
             self.home_presenter.close_view()
             self.home_presenter.cleanup()
+        
+        if self.recipe_details_presenter:
+            self.recipe_details_presenter.cleanup()
         
         event.accept()
 
