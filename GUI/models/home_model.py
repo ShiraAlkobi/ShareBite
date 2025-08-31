@@ -26,14 +26,14 @@ class RecipeData:
     is_liked: bool = False
     is_favorited: bool = False
 
-@dataclass
-class UserStatsData:
-    """Data class for user statistics"""
-    recipes_created: int = 0
-    total_likes_received: int = 0
-    total_favorites_received: int = 0
-    recipes_liked: int = 0
-    recipes_favorited: int = 0
+# @dataclass
+# class UserStatsData:
+#     """Data class for user statistics"""
+#     recipes_created: int = 0
+#     total_likes_received: int = 0
+#     total_favorites_received: int = 0
+#     recipes_liked: int = 0
+#     recipes_favorited: int = 0
 
 class HomeModel(QObject):
     """

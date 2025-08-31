@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from presenters.login_presenter import LoginPresenter
 from presenters.home_presenter import HomePresenter
+from presenters.profile_presenter import ProfilePresenter
 from presenters.recipe_details_presenter import RecipeDetailsPresenter
 from models.login_model import UserData
 
@@ -11,7 +12,7 @@ from models.login_model import UserData
 class MainWindow(QMainWindow):
     """
     Main application window implementing Microfrontends architecture
-    Manages different views (Login, Home, Recipe Details, etc.)
+    Manages different views (Login, Home, Profile, Recipe Details, etc.)
     """
     
     def __init__(self):
@@ -24,18 +25,19 @@ class MainWindow(QMainWindow):
         # Presenters for different views
         self.login_presenter = None
         self.home_presenter = None
+        self.profile_presenter = None
         self.recipe_details_presenter = None
         
         self.setup_ui()
         self.setup_authentication()
     
     def setup_ui(self):
-        self.show()
         """Setup main window UI"""
-        self.setWindowTitle("Recipe Share Platform")
+        self.setWindowTitle("ShareBite - Recipe Sharing Platform")
         self.setMinimumSize(1200, 800)
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
+        self.show()
         
         # Main content will be managed by individual presenters
         # No central widget needed since each view is a separate window
@@ -50,11 +52,11 @@ class MainWindow(QMainWindow):
         self.login_presenter.authentication_failed.connect(self.on_authentication_failed)
         
         # Show login view initially
+        # Show login view initially
         self.show_login()
     
     def show_login(self):
         """Show login microfrontend"""
-        # self.login_presenter.show_view()
         login_widget = self.login_presenter.get_view()
 
         try:
@@ -67,8 +69,6 @@ class MainWindow(QMainWindow):
             self.stack.addWidget(login_widget)
 
         self.stack.setCurrentWidget(login_widget)
-
-        # self.hide()  # Hide main window while logging in
     
     def on_authentication_success(self, user_data: UserData, access_token: str):
         """
@@ -116,7 +116,7 @@ class MainWindow(QMainWindow):
         # Connect home view signals
         self.home_presenter.recipe_details_requested.connect(self.show_recipe_details)
         self.home_presenter.add_recipe_requested.connect(self.show_add_recipe)
-        self.home_presenter.user_profile_requested.connect(self.show_user_profile)
+        self.home_presenter.user_profile_requested.connect(self.show_profile_view)
         self.home_presenter.logout_requested.connect(self.handle_logout)
         
         # Show home view
@@ -134,6 +134,47 @@ class MainWindow(QMainWindow):
         self.stack.setCurrentWidget(home_widget)
         
         # Update window title
+        self.setWindowTitle(f"ShareBite - {self.current_user.username}")
+
+    def show_profile_view(self):
+        """Show profile view in the same window"""
+        print("👤 Opening profile view...")
+        
+        if not self.profile_presenter:
+            # Create profile presenter with same user data and token
+            self.profile_presenter = ProfilePresenter(
+                user_data=self.current_user,
+                access_token=self.access_token,
+                base_url="http://127.0.0.1:8000"
+            )
+            
+            # Connect profile signals
+            self.profile_presenter.home_requested.connect(self.show_home_from_profile)
+            self.profile_presenter.logout_requested.connect(self.handle_logout)
+            self.profile_presenter.recipe_details_requested.connect(self.show_recipe_details)
+        
+        # Add profile widget to stack and switch to it
+        profile_widget = self.profile_presenter.get_view()
+
+        try:
+            with open('GUI/themes/profile_theme.qss', 'r', encoding='utf-8') as f:
+                profile_widget.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print("Profile theme file not found")
+        
+        if self.stack.indexOf(profile_widget) == -1:
+            self.stack.addWidget(profile_widget)
+        
+        self.stack.setCurrentWidget(profile_widget)
+        self.setWindowTitle(f"Profile - {self.current_user.username}")
+    
+    def show_home_from_profile(self):
+        """Return to home view from profile"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"ShareBite - {self.current_user.username}")
+    
         self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
 
     def show_recipe_details(self, recipe_id: int):
@@ -266,6 +307,11 @@ class MainWindow(QMainWindow):
             self.home_presenter.cleanup()
             self.home_presenter = None
         
+        if self.profile_presenter:
+            self.profile_presenter.close_view()
+            self.profile_presenter.cleanup()
+            self.profile_presenter = None
+        
         if self.recipe_details_presenter:
             self.recipe_details_presenter.cleanup()
             self.recipe_details_presenter = None
@@ -274,7 +320,7 @@ class MainWindow(QMainWindow):
         self.access_token = None
         
         # Reset window title
-        self.setWindowTitle("Recipe Share Platform")
+        self.setWindowTitle("ShareBite - Recipe Sharing Platform")
         
         # Show login again
         self.show_login()
@@ -291,6 +337,10 @@ class MainWindow(QMainWindow):
             self.home_presenter.close_view()
             self.home_presenter.cleanup()
         
+        if self.profile_presenter:
+            self.profile_presenter.close_view()
+            self.profile_presenter.cleanup()
+        
         if self.recipe_details_presenter:
             self.recipe_details_presenter.cleanup()
         
@@ -299,22 +349,26 @@ class MainWindow(QMainWindow):
 def load_theme_files(*theme_files):
     combined_styles = ""
     for file_path in theme_files:
-        with open(file_path, 'r') as f:
-            combined_styles += f.read() + "\n"
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                combined_styles += f.read() + "\n"
+        except FileNotFoundError:
+            print(f"Theme file not found: {file_path}")
     return combined_styles
 
 
 def main():
     """Main application entry point"""
     app = QApplication(sys.argv)
+    
 
     with open("C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\theme.qss", "r", encoding="utf-8") as f:
         app.setStyleSheet(f.read())
 
     # Set application properties
-    app.setApplicationName("Recipe Share")
+    app.setApplicationName("ShareBite")
     app.setApplicationVersion("1.0.0")
-    app.setOrganizationName("Recipe Share Inc.")
+    app.setOrganizationName("ShareBite Inc.")
     
     # Set default font
     font = QFont("Segoe UI", 10)

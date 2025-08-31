@@ -1,5 +1,5 @@
 from PySide6.QtCore import QObject, Signal
-from models.home_model import HomeModel, RecipeData, UserStatsData
+from models.home_model import HomeModel, RecipeData
 from views.home_view import HomeView
 from models.login_model import UserData
 from typing import Optional, List, Dict, Any

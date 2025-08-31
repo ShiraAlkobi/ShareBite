@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont, QColor
 from typing import List, Dict, Any
-from models.home_model import RecipeData, UserStatsData
+from models.home_model import RecipeData
 from models.login_model import UserData
 
 class RecipeCard(QFrame):
@@ -152,29 +152,30 @@ class SearchBar(QFrame):
     
     def setup_ui(self):
         """Setup search bar UI components"""
-        self.setFixedHeight(50)
+        self.setFixedHeight(60)  # Made taller for better visibility
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(16, 8, 16, 8)
-        layout.setSpacing(12)
+        layout.setContentsMargins(20, 12, 20, 12)  # Increased margins
+        layout.setSpacing(15)  # Increased spacing
         
-        # Search icon and input container
+        # Search icon and input container - made much wider
         search_container = QFrame()
         search_container.setObjectName("SearchContainer")
         
         search_layout = QHBoxLayout(search_container)
-        search_layout.setContentsMargins(12, 0, 12, 0)
-        search_layout.setSpacing(8)
+        search_layout.setContentsMargins(15, 0, 15, 0)  # More padding
+        search_layout.setSpacing(10)
         
         # Search icon
         search_icon = QLabel("🔍")
         search_icon.setObjectName("SearchIcon")
         
-        # Search input
+        # Search input - wider
         self.search_input = QLineEdit()
         self.search_input.setObjectName("SearchInput")
         self.search_input.setPlaceholderText("Search for recipes...")
         self.search_input.returnPressed.connect(self.perform_search)
+        self.search_input.setMinimumWidth(300)  # Set minimum width
         
         search_layout.addWidget(search_icon)
         search_layout.addWidget(self.search_input)
@@ -183,13 +184,15 @@ class SearchBar(QFrame):
         self.filter_combo = QComboBox()
         self.filter_combo.setObjectName("FilterCombo")
         self.filter_combo.addItems(["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"])
+        self.filter_combo.setMinimumWidth(100)  # Set minimum width
         
         # Search button
         search_button = QPushButton("Search")
         search_button.setObjectName("SearchButton")
         search_button.clicked.connect(self.perform_search)
+        search_button.setMinimumWidth(80)  # Set minimum width
         
-        layout.addWidget(search_container)
+        layout.addWidget(search_container, 1)  # Give search container more space
         layout.addWidget(self.filter_combo)
         layout.addWidget(search_button)
     
@@ -203,75 +206,6 @@ class SearchBar(QFrame):
             filters["category"] = selected_filter.lower()
         
         self.search_requested.emit(query, filters)
-
-class UserStatsWidget(QFrame):
-    """Compact user statistics display widget"""
-    
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setObjectName("UserStatsWidget")
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Setup user stats UI components"""
-        self.setFixedHeight(80)
-        
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 12, 20, 12)
-        layout.setSpacing(30)
-        
-        # Stats containers
-        self.recipes_stat = self.create_stat_widget("Recipes", "0", "📖")
-        self.likes_stat = self.create_stat_widget("Likes", "0", "♥")
-        self.favorites_stat = self.create_stat_widget("Favorites", "0", "⭐")
-        
-        layout.addWidget(self.recipes_stat)
-        layout.addWidget(self.likes_stat)
-        layout.addWidget(self.favorites_stat)
-        layout.addStretch()
-    
-    def create_stat_widget(self, label: str, value: str, icon: str) -> QWidget:
-        """Create individual stat widget with modern design"""
-        container = QFrame()
-        container.setObjectName("StatContainer")
-        
-        layout = QVBoxLayout(container)
-        layout.setSpacing(4)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setContentsMargins(16, 8, 16, 8)
-        
-        # Icon and value container
-        top_container = QHBoxLayout()
-        top_container.setSpacing(8)
-        top_container.setAlignment(Qt.AlignCenter)
-        
-        icon_label = QLabel(icon)
-        icon_label.setObjectName("StatIcon")
-        
-        value_label = QLabel(value)
-        value_label.setObjectName("StatValue")
-        
-        top_container.addWidget(icon_label)
-        top_container.addWidget(value_label)
-        
-        # Label
-        label_widget = QLabel(label)
-        label_widget.setObjectName("StatLabel")
-        label_widget.setAlignment(Qt.AlignCenter)
-        
-        layout.addLayout(top_container)
-        layout.addWidget(label_widget)
-        
-        # Store reference to value label for updates
-        container.value_label = value_label
-        
-        return container
-    
-    def update_stats(self, stats: UserStatsData):
-        """Update displayed statistics"""
-        self.recipes_stat.value_label.setText(str(stats.recipes_created))
-        self.likes_stat.value_label.setText(str(stats.total_likes_received))
-        self.favorites_stat.value_label.setText(str(stats.total_favorites_received))
 
 class HomeView(QWidget):
     """
@@ -344,10 +278,6 @@ class HomeView(QWidget):
         # Search section
         self.search_bar = SearchBar()
         content_layout.addWidget(self.search_bar)
-        
-        # Stats section
-        self.stats_widget = UserStatsWidget()
-        content_layout.addWidget(self.stats_widget)
         
         # Recipes section
         self.setup_recipes_section(content_layout)
@@ -518,10 +448,6 @@ class HomeView(QWidget):
             if loading_icon:
                 self.loading_index = (self.loading_index + 1) % len(self.loading_icons)
                 loading_icon.setText(self.loading_icons[self.loading_index])
-    
-    def display_user_stats(self, stats: UserStatsData):
-        """Display user statistics"""
-        self.stats_widget.update_stats(stats)
     
     def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for specific recipe card with optional likes count"""

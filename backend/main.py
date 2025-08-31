@@ -80,6 +80,12 @@ app.include_router(
     tags=["Recipes"]
 )
 
+app.include_router(
+       profile_router,
+       prefix="/api/v1",
+       tags=["Profile"]
+)
+
 # Include other routers when you create them
 # app.include_router(
 #     users.router,
