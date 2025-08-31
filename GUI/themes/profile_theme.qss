@@ -1,0 +1,670 @@
+/* ShareBite Profile Theme - Modern Bold Design */
+
+/* ===== MAIN WINDOW ===== */
+QWidget#ProfileView {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.3 #764ba2,
+        stop:0.7 #f093fb,
+        stop:1 #f5576c
+    );
+    min-width: 900px;
+    min-height: 600px;
+}
+
+QWidget#ProfileContentWidget {
+    background: transparent;
+    border: none;
+}
+
+/* ===== HEADER SECTION ===== */
+QFrame#ProfileHeaderSection {
+    background: rgba(113, 80, 223, 0.95);
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(20px);
+    min-height: 70px;
+    max-height: 70px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+QFrame#ProfileBrandContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#ProfileBrandLogo {
+    font-size: 26px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    background: transparent;
+}
+
+QLabel#ProfileBrandTagline {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    background: transparent;
+}
+
+QFrame#ProfileNavContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#ProfileNavButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:1 rgba(255, 255, 255, 0.08)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#ProfileNavButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.25),
+        stop:1 rgba(255, 255, 255, 0.15)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#ProfileLogoutButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 87, 108, 0.9),
+        stop:1 rgba(239, 68, 68, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#ProfileLogoutButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 1.0),
+        stop:1 rgba(220, 38, 38, 1.0)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ===== USER INFO SECTION ===== */
+QFrame#ProfileInfoSection {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 20px;
+    margin: 15px 20px 10px 20px;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    min-height: 140px;
+    max-height: 160px;
+}
+
+QFrame#ProfilePicContainer {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 40px;
+}
+
+QLabel#ProfilePicLabel {
+    font-size: 32px;
+    background: transparent;
+    color: white;
+}
+
+QFrame#ProfileDetailsContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#ProfileUsername {
+    font-size: 22px;
+    font-weight: 900;
+    color: #2d3748;
+    background: transparent;
+    letter-spacing: 1px;
+}
+
+QLabel#ProfileEmail {
+    font-size: 14px;
+    color: #4a5568;
+    background: transparent;
+    font-weight: 500;
+}
+
+QLabel#ProfileBio {
+    font-size: 12px;
+    color: #718096;
+    background: transparent;
+    line-height: 1.3;
+    margin: 3px 0px;
+}
+
+QLabel#ProfileMemberSince {
+    font-size: 10px;
+    color: #a0aec0;
+    background: transparent;
+    font-weight: 500;
+}
+
+QFrame#ProfileEditContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#ProfileEditButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 16px;
+    letter-spacing: 0.5px;
+    min-width: 80px;
+    max-height: 35px;
+}
+
+QPushButton#ProfileEditButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+/* ===== TABS SECTION ===== */
+QFrame#ProfileTabsContainer {
+    background: transparent;
+    border: none;
+    margin: 0px 20px 20px 20px;
+}
+
+QTabWidget#ProfileTabWidget {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 20px;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+QTabWidget#ProfileTabWidget::pane {
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+}
+
+QTabWidget#ProfileTabWidget::tab-bar {
+    alignment: center;
+}
+
+QTabBar::tab {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.1),
+        stop:1 rgba(118, 75, 162, 0.1)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 24px;
+    margin: 2px;
+    border-radius: 15px;
+    min-width: 120px;
+}
+
+QTabBar::tab:selected {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+QTabBar::tab:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.2),
+        stop:1 rgba(118, 75, 162, 0.2)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.5);
+}
+
+/* ===== TAB CONTENT ===== */
+QWidget#ProfileMyRecipesTab,
+QWidget#ProfileFavoritesTab {
+    background: transparent;
+    border: none;
+}
+
+QLabel#ProfileTabHeader {
+    font-size: 24px;
+    font-weight: 800;
+    color: #2d3748;
+    background: transparent;
+    margin-bottom: 10px;
+}
+
+QWidget#ProfileMyRecipesContainer,
+QWidget#ProfileFavoritesContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#ProfileEmptyLabel {
+    font-size: 18px;
+    color: #a0aec0;
+    background: transparent;
+    font-weight: 500;
+    margin: 50px;
+}
+
+/* ===== RECIPE CARDS ===== */
+QFrame#ProfileRecipeCard {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 15px;
+    min-width: 250px;
+    max-width: 280px;
+    min-height: 280px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+QFrame#ProfileRecipeCard:hover {
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    background: white;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+}
+
+QFrame#ProfileRecipeImage {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(240, 147, 251, 0.8),
+        stop:1 rgba(245, 87, 108, 0.8)
+    );
+    border-radius: 15px 15px 0px 0px;
+    border: none;
+}
+
+QLabel#ProfileRecipeImageLabel {
+    font-size: 36px;
+    color: white;
+    background: transparent;
+}
+
+QFrame#ProfileRecipeContent {
+    background: transparent;
+    border: none;
+}
+
+QLabel#ProfileRecipeTitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2d3748;
+    background: transparent;
+    line-height: 1.2;
+}
+
+QLabel#ProfileRecipeDescription {
+    font-size: 13px;
+    color: #718096;
+    background: transparent;
+    line-height: 1.3;
+}
+
+QFrame#ProfileRecipeStats {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#ProfileRecipeLikeButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 0.1),
+        stop:1 rgba(220, 38, 38, 0.1)
+    );
+    border: 2px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 8px;
+    min-width: 70px;
+}
+
+QPushButton#ProfileRecipeLikeButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 0.2),
+        stop:1 rgba(220, 38, 38, 0.2)
+    );
+    border: 2px solid rgba(239, 68, 68, 0.5);
+}
+
+QPushButton#ProfileRecipeLikeButton[liked="true"] {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #ef4444,
+        stop:1 #dc2626
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+QPushButton#ProfileRecipeLikeButton[liked="true"]:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #dc2626,
+        stop:1 #b91c1c
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#ProfileRecipeViewButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    min-width: 80px;
+}
+
+QPushButton#ProfileRecipeViewButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+/* ===== EDIT PROFILE DIALOG ===== */
+QDialog#ProfileEditDialog {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.5 #764ba2,
+        stop:1 #f093fb
+    );
+    border-radius: 20px;
+}
+
+QLabel#ProfileEditTitle {
+    font-size: 24px;
+    font-weight: 900;
+    color: white;
+    background: transparent;
+    margin-bottom: 15px;
+}
+
+QFrame#ProfileEditForm {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+}
+
+QLabel#ProfileEditLabel {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2d3748;
+    background: transparent;
+    margin-bottom: 4px;
+}
+
+QLineEdit#ProfileEditInput {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    min-height: 40px;
+}
+
+QLineEdit#ProfileEditInput:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+QLineEdit#ProfileEditInput:hover {
+    border: 2px solid #a0aec0;
+    background: white;
+}
+
+QTextEdit#ProfileEditBio {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    font-family: "Segoe UI", sans-serif;
+}
+
+QTextEdit#ProfileEditBio:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+QTextEdit#ProfileEditBio:hover {
+    border: 2px solid #a0aec0;
+    background: white;
+}
+
+QDialogButtonBox#ProfileEditButtons {
+    background: transparent;
+    border: none;
+}
+
+QDialogButtonBox#ProfileEditButtons QPushButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    min-width: 80px;
+}
+
+QDialogButtonBox#ProfileEditButtons QPushButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+QDialogButtonBox#ProfileEditButtons QPushButton:pressed {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #4c51bf,
+        stop:1 #553c9a
+    );
+}
+
+/* ===== MESSAGE LABEL ===== */
+QLabel#ProfileMessageLabel {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 10px 20px;
+}
+
+QLabel#ProfileMessageLabel[error="false"] {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+/* ===== LOADING INDICATOR ===== */
+QFrame#ProfileLoadingIndicator {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(102, 126, 234, 0.9),
+        stop:1 rgba(240, 147, 251, 0.9)
+    );
+    border-radius: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    min-width: 60px;
+    max-width: 60px;
+    min-height: 60px;
+    max-height: 60px;
+}
+
+QLabel#ProfileLoadingLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: transparent;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+QScrollBar:vertical {
+    background: rgba(255, 255, 255, 0.1);
+    width: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ===== HOVER ANIMATIONS ===== */
+QPushButton {
+    transition: all 0.3s ease;
+}
+
+QFrame:hover {
+    transition: all 0.2s ease;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    transition: all 0.2s ease;
+}
+
+QTabBar::tab {
+    transition: all 0.2s ease;
+}
+
+/* ===== ACCESSIBILITY FOCUS INDICATORS ===== */
+QWidget:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+    QFrame#ProfileRecipeCard {
+        min-width: 220px;
+        max-width: 250px;
+    }
+}
+
+@media (max-width: 900px) {
+    QLabel#ProfileUsername {
+        font-size: 24px;
+    }
+    
+    QLabel#ProfileBrandLogo {
+        font-size: 22px;
+    }
+    
+    QTabBar::tab {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+}

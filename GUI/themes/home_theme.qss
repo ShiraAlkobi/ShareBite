@@ -1,110 +1,7 @@
-/* ShareBite Home View Theme - Vibrant Colorful Modern Design */
+/* ShareBite Home Theme - Updated to Match Profile Design */
 
 /* ===== MAIN WINDOW ===== */
 QWidget#HomeView {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #667eea,
-        stop:0.2 #764ba2,
-        stop:0.4 #f093fb,
-        stop:0.6 #f5576c,
-        stop:0.8 #4facfe,
-        stop:1 #00f2fe
-    );
-    min-width: 700px;
-    min-height: 500px;
-    max-width: 1000px;
-    max-height: 700px;
-}
-
-/* ===== SCROLL AREA ===== */
-QScrollArea {
-    border: none;
-    background: transparent;
-}
-
-QScrollArea > QWidget > QWidget {
-    background: transparent;
-}
-
-QScrollArea > QWidget {
-    background: transparent;
-}
-
-QWidget#HomeContentWidget {
-    background: transparent;
-}
-
-/* ===== HEADER SECTION ===== */
-QFrame#HeaderSection {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 107, 53, 0.95),
-        stop:0.3 rgba(245, 87, 108, 0.95),
-        stop:0.7 rgba(79, 172, 254, 0.95),
-        stop:1 rgba(0, 242, 254, 0.95)
-    );
-    border: none;
-    border-radius: 0px;
-    backdrop-filter: blur(30px);
-    border-bottom: 3px solid rgba(255, 255, 255, 0.3);
-}
-
-QLabel#AppLogo {
-    font-size: 28px;
-    color: white;
-    font-weight: 900;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-QLabel#AppBrand {
-    font-size: 24px;
-    font-weight: 900;
-    color: white;
-    letter-spacing: 2px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-QLabel#WelcomeMessage {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.95);
-    font-weight: 600;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-/* ===== NAVIGATION BUTTONS ===== */
-QPushButton#AddRecipeButton {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #ff6b35,
-        stop:0.3 #f7931e,
-        stop:0.7 #ffd700,
-        stop:1 #ffed4e
-    );
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
-    color: white;
-    font-size: 13px;
-    font-weight: 800;
-    padding: 10px 16px;
-    min-height: 35px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-QPushButton#AddRecipeButton:hover {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #ff5722,
-        stop:0.3 #ff9800,
-        stop:0.7 #ffc107,
-        stop:1 #ffeb3b
-    );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
-}
-
-QPushButton#ProfileButton {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:1,
         stop:0 #667eea,
@@ -112,58 +9,122 @@ QPushButton#ProfileButton {
         stop:0.7 #f093fb,
         stop:1 #f5576c
     );
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
+    min-width: 700px;
+    min-height: 500px;
+    max-width: 1000px;
+    max-height: 700px;
+}
+
+QWidget#HomeContentWidget {
+    background: transparent;
+    border: none;
+}
+
+/* ===== HEADER SECTION ===== */
+QFrame#HeaderSection {
+    background: rgba(113, 80, 223, 0.95);
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(20px);
+    min-height: 60px;
+    max-height: 60px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+QLabel#AppLogo {
+    font-size: 24px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    background: transparent;
+}
+
+QLabel#AppBrand {
+    font-size: 22px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 1px;
+    background: transparent;
+}
+
+QLabel#WelcomeMessage {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    background: transparent;
+}
+
+/* ===== NAVIGATION BUTTONS ===== */
+QPushButton#AddRecipeButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(34, 197, 94, 0.9),
+        stop:1 rgba(16, 185, 129, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
     font-size: 13px;
-    font-weight: 800;
-    padding: 10px 16px;
-    min-height: 35px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#AddRecipeButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(34, 197, 94, 1.0),
+        stop:1 rgba(16, 185, 129, 1.0)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#ProfileButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:1 rgba(255, 255, 255, 0.08)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
 }
 
 QPushButton#ProfileButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #5a67d8,
-        stop:0.3 #6b46c1,
-        stop:0.7 #e879f9,
-        stop:1 #ef4444
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.25),
+        stop:1 rgba(255, 255, 255, 0.15)
     );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
 QPushButton#LogoutButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #ef4444,
-        stop:0.3 #f97316,
-        stop:0.7 #eab308,
-        stop:1 #22c55e
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 87, 108, 0.9),
+        stop:1 rgba(239, 68, 68, 0.9)
     );
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
     font-size: 13px;
-    font-weight: 800;
-    padding: 10px 16px;
-    min-height: 35px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
 }
 
 QPushButton#LogoutButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #dc2626,
-        stop:0.3 #ea580c,
-        stop:0.7 #ca8a04,
-        stop:1 #16a34a
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 1.0),
+        stop:1 rgba(220, 38, 38, 1.0)
     );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
 /* ===== CONTENT WRAPPER ===== */
@@ -174,31 +135,21 @@ QFrame#ContentWrapper {
 
 /* ===== SEARCH BAR ===== */
 QFrame#SearchBar {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 255, 255, 0.95),
-        stop:0.5 rgba(240, 147, 251, 0.1),
-        stop:1 rgba(255, 255, 255, 0.95)
-    );
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
-    border: 3px solid rgba(102, 126, 234, 0.3);
+    border: 2px solid rgba(102, 126, 234, 0.2);
     backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 QFrame#SearchContainer {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(247, 250, 252, 0.9),
-        stop:0.5 rgba(240, 147, 251, 0.1),
-        stop:1 rgba(247, 250, 252, 0.9)
-    );
-    border: 2px solid rgba(102, 126, 234, 0.2);
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
 }
 
 QLabel#SearchIcon {
-    font-size: 18px;
+    font-size: 16px;
     background: transparent;
     color: #667eea;
 }
@@ -208,7 +159,7 @@ QLineEdit#SearchInput {
     border: none;
     font-size: 14px;
     color: #2d3748;
-    font-weight: 600;
+    font-weight: 500;
     padding: 10px;
 }
 
@@ -219,120 +170,88 @@ QLineEdit#SearchInput:focus {
 
 QComboBox#FilterCombo {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(79, 172, 254, 0.8),
-        stop:1 rgba(0, 242, 254, 0.8)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
     );
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 10px;
-    padding: 8px 14px;
-    font-size: 13px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
     color: white;
-    font-weight: 700;
-    min-width: 90px;
-}
-
-QComboBox#FilterCombo:hover {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(79, 172, 254, 1.0),
-        stop:1 rgba(0, 242, 254, 1.0)
-    );
-    border: 2px solid rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    min-width: 80px;
 }
 
 QPushButton#SearchButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #667eea,
-        stop:0.3 #764ba2,
-        stop:0.7 #f093fb,
-        stop:1 #f5576c
+        stop:1 #764ba2
     );
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 12px;
+    border: none;
+    border-radius: 8px;
     color: white;
-    font-size: 13px;
-    font-weight: 800;
-    padding: 10px 20px;
-    min-height: 35px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
 }
 
 QPushButton#SearchButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #5a67d8,
-        stop:0.3 #6b46c1,
-        stop:0.7 #e879f9,
-        stop:1 #ef4444
+        stop:1 #6b46c1
     );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 /* ===== USER STATS WIDGET ===== */
 QFrame#UserStatsWidget {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 107, 53, 0.15),
-        stop:0.3 rgba(245, 87, 108, 0.15),
-        stop:0.7 rgba(79, 172, 254, 0.15),
-        stop:1 rgba(0, 242, 254, 0.15)
-    );
+    background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(30px);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 QFrame#StatContainer {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(255, 107, 53, 0.9),
-        stop:0.3 rgba(245, 158, 11, 0.9),
-        stop:0.7 rgba(34, 197, 94, 0.9),
-        stop:1 rgba(79, 172, 254, 0.9)
+        stop:0 #667eea,
+        stop:1 #764ba2
     );
-    border-radius: 12px;
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    min-height: 55px;
+    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    min-height: 50px;
 }
 
 QFrame#StatContainer:hover {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(255, 107, 53, 1.0),
-        stop:0.3 rgba(245, 158, 11, 1.0),
-        stop:0.7 rgba(34, 197, 94, 1.0),
-        stop:1 rgba(79, 172, 254, 1.0)
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
     );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
 QLabel#StatIcon {
-    font-size: 18px;
+    font-size: 16px;
     background: transparent;
     color: white;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 QLabel#StatValue {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 900;
     color: white;
     background: transparent;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 QLabel#StatLabel {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.95);
+    font-size: 10px;
+    color: white;
     background: transparent;
-    font-weight: 700;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+    font-weight: 600;
 }
 
 /* ===== RECIPES SECTION ===== */
@@ -343,39 +262,32 @@ QFrame#RecipesHeader {
 
 QLabel#SectionTitle {
     font-size: 20px;
-    font-weight: 900;
+    font-weight: 800;
     color: white;
     background: transparent;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 QPushButton#RefreshButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(34, 197, 94, 0.8),
-        stop:0.5 rgba(79, 172, 254, 0.8),
-        stop:1 rgba(147, 51, 234, 0.8)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:1 rgba(255, 255, 255, 0.08)
     );
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    border-radius: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 8px 16px;
-    min-height: 32px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
 }
 
 QPushButton#RefreshButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(34, 197, 94, 1.0),
-        stop:0.5 rgba(79, 172, 254, 1.0),
-        stop:1 rgba(147, 51, 234, 1.0)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.25),
+        stop:1 rgba(255, 255, 255, 0.15)
     );
-    border: 3px solid rgba(255, 255, 255, 0.6);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
 }
 
 QWidget#RecipeContainer {
@@ -385,43 +297,34 @@ QWidget#RecipeContainer {
 
 /* ===== RECIPE CARDS ===== */
 QFrame#RecipeCard {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #667eea,
-        stop:0.3 #764ba2,
-        stop:0.7 #f093fb,
-        stop:1 #f5576c
-    );
-    border-radius: 18px;
-    border: 3px solid rgba(102, 126, 234, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 15px;
     backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 QFrame#RecipeCard:hover {
-    background: qlineargradient(
-        x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(255, 255, 255, 1.0),
-        stop:0.3 rgba(240, 147, 251, 0.1),
-        stop:0.7 rgba(79, 172, 254, 0.1),
-        stop:1 rgba(255, 255, 255, 1.0)
-    );
-    border: 3px solid rgba(102, 126, 234, 0.6);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    background: white;
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
 }
 
 QFrame#RecipeImageContainer {
-    background: #e2c0e6ff;
-    border-radius: 18px 18px 0px 0px;
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(240, 147, 251, 0.8),
+        stop:1 rgba(245, 87, 108, 0.8)
+    );
+    border-radius: 15px 15px 0px 0px;
     border: none;
 }
 
 QLabel#RecipeImagePlaceholder {
-    font-size: 48px;
+    font-size: 36px;
     background: transparent;
     color: white;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 QFrame#RecipeContent {
@@ -432,9 +335,9 @@ QFrame#RecipeContent {
 QLabel#RecipeTitle {
     font-size: 15px;
     font-weight: 800;
-    color: #8092e4ff;
+    color: #2d3748;
     background: transparent;
-    text-shadow: 0px 1px 2px rgba(255, 255, 255, 0.5);
+    line-height: 1.2;
 }
 
 QFrame#RecipeMetadata {
@@ -444,15 +347,15 @@ QFrame#RecipeMetadata {
 
 QLabel#RecipeAuthor {
     font-size: 12px;
-    color: #667eea;
-    font-weight: 700;
+    color: #718096;
+    font-weight: 500;
     background: transparent;
 }
 
 QLabel#RecipeDate {
     font-size: 11px;
-    color: #6b7280;
-    font-weight: 600;
+    color: #a0aec0;
+    font-weight: 500;
     background: transparent;
 }
 
@@ -464,326 +367,232 @@ QFrame#RecipeActions {
 
 QPushButton#LikeButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(239, 68, 68, 0.2),
-        stop:1 rgba(236, 72, 153, 0.2)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 0.1),
+        stop:1 rgba(220, 38, 38, 0.1)
     );
-    border: 2px solid rgba(239, 68, 68, 0.4);
-    border-radius: 8px;
+    border: 2px solid rgba(239, 68, 68, 0.3);
     color: #ef4444;
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 600;
     padding: 6px 12px;
-    min-height: 28px;
+    border-radius: 8px;
+    min-width: 70px;
 }
 
 QPushButton#LikeButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(239, 68, 68, 0.3),
-        stop:1 rgba(236, 72, 153, 0.3)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 0.2),
+        stop:1 rgba(220, 38, 38, 0.2)
     );
-    border: 2px solid rgba(239, 68, 68, 0.6);
-    transform: translateY(-1px);
+    border: 2px solid rgba(239, 68, 68, 0.5);
 }
 
 QPushButton#LikeButton[liked="true"] {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #ef4444,
-        stop:0.5 #f97316,
-        stop:1 #ec4899
+        stop:1 #dc2626
     );
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
-    border: 2px solid #ef4444;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 QPushButton#FavoriteButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(245, 158, 11, 0.2),
-        stop:1 rgba(251, 191, 36, 0.2)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 158, 11, 0.1),
+        stop:1 rgba(251, 191, 36, 0.1)
     );
-    border: 2px solid rgba(245, 158, 11, 0.4);
+    border: 2px solid rgba(245, 158, 11, 0.3);
     border-radius: 8px;
     color: #f59e0b;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 600;
     padding: 6px 10px;
-    min-height: 28px;
-    min-width: 28px;
+    min-width: 30px;
 }
 
 QPushButton#FavoriteButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(245, 158, 11, 0.3),
-        stop:1 rgba(251, 191, 36, 0.3)
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 158, 11, 0.2),
+        stop:1 rgba(251, 191, 36, 0.2)
     );
-    border: 2px solid rgba(245, 158, 11, 0.6);
-    transform: translateY(-1px);
+    border: 2px solid rgba(245, 158, 11, 0.5);
 }
 
 QPushButton#FavoriteButton[favorited="true"] {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #f59e0b,
-        stop:0.5 #eab308,
-        stop:1 #fbbf24
+        stop:1 #eab308
     );
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
-    border: 2px solid #f59e0b;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 QPushButton#ViewRecipeButton {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #667eea,
-        stop:0.3 #764ba2,
-        stop:0.7 #4facfe,
-        stop:1 #00f2fe
+        stop:1 #764ba2
     );
-    border: 2px solid rgba(102, 126, 234, 0.4);
+    border: none;
     border-radius: 8px;
     color: white;
     font-size: 12px;
-    font-weight: 800;
-    padding: 6px 16px;
-    min-height: 28px;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    font-weight: 600;
+    padding: 6px 12px;
+    min-width: 60px;
 }
 
 QPushButton#ViewRecipeButton:hover {
     background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
+        x1:0, y1:0, x2:1, y2:0,
         stop:0 #5a67d8,
-        stop:0.3 #6b46c1,
-        stop:0.7 #3b82f6,
-        stop:1 #06b6d4
+        stop:1 #6b46c1
     );
-    border: 2px solid rgba(102, 126, 234, 0.6);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 /* ===== EMPTY STATE ===== */
 QFrame#EmptyState {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(255, 255, 255, 0.15),
-        stop:0.5 rgba(240, 147, 251, 0.1),
-        stop:1 rgba(79, 172, 254, 0.15)
-    );
-    border-radius: 18px;
-    border: 3px dashed rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    border: 2px dashed rgba(102, 126, 234, 0.3);
     backdrop-filter: blur(20px);
 }
 
 QLabel#EmptyStateIcon {
-    font-size: 64px;
-    color: rgba(255, 255, 255, 0.8);
+    font-size: 48px;
+    color: #a0aec0;
     background: transparent;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 QLabel#EmptyStateMessage {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 700;
+    font-size: 16px;
+    color: #718096;
+    font-weight: 500;
     background: transparent;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 /* ===== LOADING INDICATOR ===== */
 QFrame#LoadingIndicator {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(255, 107, 53, 0.9),
-        stop:0.2 rgba(245, 158, 11, 0.9),
-        stop:0.4 rgba(34, 197, 94, 0.9),
-        stop:0.6 rgba(79, 172, 254, 0.9),
-        stop:0.8 rgba(147, 51, 234, 0.9),
-        stop:1 rgba(236, 72, 153, 0.9)
+        stop:0 rgba(102, 126, 234, 0.9),
+        stop:1 rgba(240, 147, 251, 0.9)
     );
     border-radius: 30px;
-    border: 3px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    min-width: 60px;
+    max-width: 60px;
+    min-height: 60px;
+    max-height: 60px;
 }
 
 QLabel#LoadingIcon {
-    font-size: 24px;
+    font-size: 18px;
     color: white;
     background: transparent;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ===== TEMPORARY MESSAGE LABEL ===== */
 QLabel#TempMessageLabel {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(34, 197, 94, 0.95),
-        stop:1 rgba(79, 172, 254, 0.95)
-    );
+    background: rgba(16, 185, 129, 0.9);
     color: white;
-    border-radius: 12px;
-    padding: 12px 24px;
+    border-radius: 10px;
+    padding: 12px 20px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     margin: 10px;
     max-width: 300px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 QLabel#TempMessageLabel[error="true"] {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(239, 68, 68, 0.95),
-        stop:1 rgba(245, 101, 101, 0.95)
-    );
+    background: rgba(239, 68, 68, 0.9);
     color: white;
-    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 /* ===== SCROLLBAR STYLING ===== */
 QScrollBar:vertical {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 255, 255, 0.1),
-        stop:1 rgba(102, 126, 234, 0.1)
-    );
-    width: 12px;
-    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    width: 8px;
+    border-radius: 4px;
+    margin: 0px;
 }
 
 QScrollBar::handle:vertical {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(102, 126, 234, 0.8),
-        stop:1 rgba(240, 147, 251, 0.8)
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
     );
-    border-radius: 6px;
-    min-height: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    min-height: 20px;
 }
 
 QScrollBar::handle:vertical:hover {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(102, 126, 234, 1.0),
-        stop:1 rgba(240, 147, 251, 1.0)
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
     );
-    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
 }
 
 QScrollBar:horizontal {
-    background: qlineargradient(
-        x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(255, 255, 255, 0.1),
-        stop:1 rgba(102, 126, 234, 0.1)
-    );
-    height: 12px;
-    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    margin: 0px;
 }
 
 QScrollBar::handle:horizontal {
     background: qlineargradient(
         x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(102, 126, 234, 0.8),
-        stop:1 rgba(240, 147, 251, 0.8)
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
     );
-    border-radius: 6px;
-    min-width: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    min-width: 20px;
 }
 
 QScrollBar::handle:horizontal:hover {
     background: qlineargradient(
         x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(102, 126, 234, 1.0),
-        stop:1 rgba(240, 147, 251, 1.0)
-    );
-    border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-/* ===== WINDOW BACKGROUND ===== */
-QMainWindow {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #1e293b,
-        stop:0.5 #334155,
-        stop:1 #475569
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
     );
 }
 
-QDialog {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 #2d3748,
-        stop:1 #4a5568
-    );
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
 }
 
 /* ===== HOVER ANIMATIONS ===== */
 QPushButton {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
 }
 
 QFrame:hover {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 
 QLineEdit:focus {
-    transition: all 0.2s ease-in-out;
-}
-
-/* ===== ADVANCED VISUAL EFFECTS ===== */
-QPushButton:pressed {
-    transform: scale(0.98);
-}
-
-QFrame#RecipeCard:pressed {
-    transform: translateY(-2px) scale(0.98);
+    transition: all 0.2s ease;
 }
 
 /* ===== ACCESSIBILITY FOCUS INDICATORS ===== */
 QWidget:focus {
-    outline: 3px solid rgba(255, 107, 53, 0.8);
+    outline: 2px solid #667eea;
     outline-offset: 2px;
-    border-radius: 4px;
-}
-
-/* ===== HIGH CONTRAST MODE SUPPORT ===== */
-@media (prefers-contrast: high) {
-    QFrame#RecipeCard,
-    QFrame#SearchBar,
-    QFrame#UserStatsWidget {
-        border-width: 4px;
-    }
-    
-    QPushButton {
-        border: 3px solid white;
-        font-weight: 900;
-    }
-    
-    QLabel {
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    }
-}
-
-/* ===== DARK MODE ALTERNATIVE ===== */
-@media (prefers-color-scheme: dark) {
-    QWidget#HomeView {
-        background: qlineargradient(
-            x1:0, y1:0, x2:1, y2:1,
-            stop:0 #1a1a2e,
-            stop:0.3 #16213e,
-            stop:0.7 #0f3460,
-            stop:1 #533483
-        );
-    }
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
@@ -791,49 +600,26 @@ QWidget:focus {
     QPushButton#AddRecipeButton,
     QPushButton#ProfileButton,
     QPushButton#LogoutButton {
-        padding: 8px 12px;
+        padding: 6px 12px;
         font-size: 12px;
-        min-height: 30px;
+        min-width: 70px;
     }
     
     QFrame#RecipeCard {
         border-width: 2px;
     }
-    
-    QLabel#RecipeImagePlaceholder {
-        font-size: 36px;
+}
+
+/* ===== HIGH CONTRAST MODE SUPPORT ===== */
+@media (prefers-contrast: high) {
+    QFrame#RecipeCard,
+    QFrame#SearchBar,
+    QFrame#UserStatsWidget {
+        border-width: 3px;
     }
-}
-
-/* ===== ANIMATION KEYFRAMES ===== */
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-}
-
-@keyframes slideIn {
-    from { transform: translateX(-100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-/* ===== CUSTOM SCROLL ARROWS ===== */
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical,
-QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal {
-    background: transparent;
-    border: none;
-}
-
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical,
-QScrollBar::add-page:horizontal,
-QScrollBar::sub-page:horizontal {
-    background: transparent;
+    
+    QPushButton {
+        border: 2px solid white;
+        font-weight: 700;
+    }
 }

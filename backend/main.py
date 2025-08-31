@@ -8,6 +8,7 @@ from database import test_connection, get_database_stats
 # Import authentication and recipe routes
 from auth_routes import router as auth_router
 from recipe_routes import router as recipe_router
+from user_routes import router as profile_router
 
 # Import other routers when you create them
 # from routers import recipes, users, tags
@@ -78,6 +79,12 @@ app.include_router(
     recipe_router,
     prefix="/api/v1",
     tags=["Recipes"]
+)
+
+app.include_router(
+       profile_router,
+       prefix="/api/v1",
+       tags=["Profile"]
 )
 
 # Include other routers when you create them
