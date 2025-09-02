@@ -179,7 +179,257 @@ class RecipeListResponse(BaseModel):
     from_cache: bool = False  # נוסיף אינדיקציה אם הנתונים מהמטמון
 
 # ============= ENDPOINTS =============
+# IMPORTANT: Add this route BEFORE the /{recipe_id} route in your recipe_routes.py file
+# FastAPI matches routes in order, so more specific paths must come before parameterized ones
 
+@router.get("/search", response_model=RecipeListResponse)
+async def search_recipes(
+    q: str = Query(..., description="Search query for recipe title, description, or ingredients"),
+    category: Optional[str] = Query(None, description="Filter by category (breakfast, lunch, dinner, dessert, snacks)"),
+    author: Optional[str] = Query(None, description="Filter by author name"),
+    limit: int = Query(20, ge=1, le=100, description="Number of results to return"),
+    offset: int = Query(0, ge=0, description="Number of results to skip"),
+    current_user: dict = Depends(verify_token)
+):
+    """
+    Search recipes with filters and pagination
+    Searches in title, description, ingredients, and raw_ingredients
+    """
+    try:
+        user_id = current_user['userid']
+        print(f"Searching recipes for user: {current_user['username']} (ID: {user_id})")
+        print(f"Query: '{q}', Category: {category}, Author: {author}")
+        
+        # Build search query with user-specific like/favorite status
+        base_query = """
+        SELECT 
+            r.RecipeID,
+            r.Title,
+            r.Description,
+            r.Ingredients,
+            r.Instructions,
+            r.ImageURL,
+            r.RawIngredients,
+            r.Servings,
+            r.CreatedAt,
+            r.AuthorID,
+            u.Username as AuthorName,
+            (SELECT COUNT(*) FROM Likes WHERE RecipeID = r.RecipeID) as LikesCount,
+            CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = r.RecipeID AND UserID = ?) 
+                 THEN 1 ELSE 0 END as IsLiked,
+            CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = r.RecipeID AND UserID = ?) 
+                 THEN 1 ELSE 0 END as IsFavorited
+        FROM Recipes r
+        JOIN Users u ON r.AuthorID = u.UserID
+        WHERE 1=1
+        """
+        
+        # Build WHERE conditions and parameters
+        conditions = []
+        params = [user_id, user_id]  # For the IsLiked and IsFavorited subqueries
+        
+        # Search in multiple fields - Enhanced for multi-word queries
+        if q and q.strip():
+            search_query = q.strip()
+            search_terms = search_query.split()
+            
+            print(f"Search terms: {search_terms}")
+            print(f"Original query: '{search_query}'")
+            
+            if len(search_terms) == 1:
+                # Single word search - use original logic
+                search_condition = """
+                (LOWER(r.Title) LIKE LOWER(?) 
+                 OR LOWER(r.Description) LIKE LOWER(?) 
+                 OR LOWER(r.Ingredients) LIKE LOWER(?) 
+                 OR LOWER(r.RawIngredients) LIKE LOWER(?))
+                """
+                search_term = f"%{search_query}%"
+                conditions.append(search_condition)
+                params.extend([search_term, search_term, search_term, search_term])
+                print(f"Single word search with term: '{search_term}'")
+                
+            else:
+                # Multi-word search - each word must appear somewhere in the record
+                word_conditions = []
+                for term in search_terms:
+                    word_condition = """
+                    (LOWER(r.Title) LIKE LOWER(?) 
+                     OR LOWER(r.Description) LIKE LOWER(?) 
+                     OR LOWER(r.Ingredients) LIKE LOWER(?) 
+                     OR LOWER(r.RawIngredients) LIKE LOWER(?))
+                    """
+                    word_conditions.append(word_condition)
+                    word_term = f"%{term}%"
+                    params.extend([word_term, word_term, word_term, word_term])
+                
+                # All words must be found (AND logic)
+                multi_word_condition = "(" + " AND ".join(word_conditions) + ")"
+                conditions.append(multi_word_condition)
+                print(f"Multi-word search with {len(search_terms)} terms, added {len(search_terms) * 4} parameters")
+        
+        # Category filter (if provided)
+        if category and category.lower() != "all":
+            # Assuming you have a category field or want to search in description/title for category
+            # You might want to add a Category column to your Recipes table for better filtering
+            category_condition = """
+            (LOWER(r.Title) LIKE LOWER(?) 
+             OR LOWER(r.Description) LIKE LOWER(?))
+            """
+            conditions.append(category_condition)
+            category_term = f"%{category.strip()}%"
+            params.extend([category_term, category_term])
+        
+        # Author filter (if provided)
+        if author and author.strip():
+            conditions.append("LOWER(u.Username) LIKE LOWER(?)")
+            params.append(f"%{author.strip()}%")
+        
+        # Combine all conditions
+        if conditions:
+            base_query += " AND " + " AND ".join(conditions)
+        
+        # Add ordering and pagination (SQL Server syntax)
+        base_query += """
+        ORDER BY r.CreatedAt DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """
+        params.extend([offset, limit])
+        
+        print(f"Executing search query with {len(params)} parameters")
+        print(f"Original search query: '{q}'")
+        print(f"Full query: {base_query}")
+        print(f"Parameters: {params}")
+        
+        # Execute search query
+        search_results = execute_query(base_query, tuple(params))
+        
+        print(f"Found {len(search_results)} recipes matching search criteria")
+        
+        # Convert results to API format
+        recipes = []
+        for row in search_results:
+            try:
+                # Format created_at
+                created_at_str = datetime.now().isoformat()
+                if row.get('CreatedAt'):
+                    if isinstance(row['CreatedAt'], str):
+                        created_at_str = row['CreatedAt']
+                    else:
+                        try:
+                            created_at_str = row['CreatedAt'].isoformat()
+                        except:
+                            created_at_str = str(row['CreatedAt'])
+                
+                recipe_dict = {
+                    "recipe_id": row['RecipeID'],
+                    "title": row.get('Title') or "Untitled Recipe",
+                    "description": row.get('Description') or "",
+                    "author_name": row.get('AuthorName') or "Unknown Chef",
+                    "author_id": row['AuthorID'],
+                    "image_url": row.get('ImageURL'),
+                    "ingredients": row.get('Ingredients'),
+                    "instructions": row.get('Instructions'),
+                    "raw_ingredients": row.get('RawIngredients'),
+                    "servings": row.get('Servings'),
+                    "created_at": created_at_str,
+                    "likes_count": row.get('LikesCount') or 0,
+                    "is_liked": bool(row.get('IsLiked')),
+                    "is_favorited": bool(row.get('IsFavorited'))
+                }
+                recipes.append(recipe_dict)
+                
+            except Exception as e:
+                print(f"Error processing search result row: {e}")
+                continue
+        
+        # Build separate count query without user-specific fields to avoid parameter mismatch
+        count_base_query = """
+        SELECT COUNT(*)
+        FROM Recipes r
+        JOIN Users u ON r.AuthorID = u.UserID
+        WHERE 1=1
+        """
+        
+        # Add the same conditions as the main query but without user-specific parameters
+        count_conditions = []
+        count_params = []
+        
+        # Search in multiple fields - Enhanced count query logic
+        if q and q.strip():
+            # Split search terms for better matching (same logic as main query)
+            search_terms = q.strip().split()
+            
+            if len(search_terms) == 1:
+                # Single word search
+                search_condition = """
+                (LOWER(r.Title) LIKE LOWER(?) 
+                 OR LOWER(r.Description) LIKE LOWER(?) 
+                 OR LOWER(r.Ingredients) LIKE LOWER(?) 
+                 OR LOWER(r.RawIngredients) LIKE LOWER(?))
+                """
+                count_conditions.append(search_condition)
+                search_term = f"%{q.strip()}%"
+                count_params.extend([search_term, search_term, search_term, search_term])
+                
+            else:
+                # Multi-word search - each word must appear somewhere
+                word_conditions = []
+                for term in search_terms:
+                    word_condition = """
+                    (LOWER(r.Title) LIKE LOWER(?) 
+                     OR LOWER(r.Description) LIKE LOWER(?) 
+                     OR LOWER(r.Ingredients) LIKE LOWER(?) 
+                     OR LOWER(r.RawIngredients) LIKE LOWER(?))
+                    """
+                    word_conditions.append(word_condition)
+                    word_term = f"%{term}%"
+                    count_params.extend([word_term, word_term, word_term, word_term])
+                
+                # All words must be found (AND logic)
+                multi_word_condition = "(" + " AND ".join(word_conditions) + ")"
+                count_conditions.append(multi_word_condition)
+        
+        # Category filter (if provided)
+        if category and category.lower() != "all":
+            category_condition = """
+            (LOWER(r.Title) LIKE LOWER(?) 
+             OR LOWER(r.Description) LIKE LOWER(?))
+            """
+            count_conditions.append(category_condition)
+            category_term = f"%{category.strip()}%"
+            count_params.extend([category_term, category_term])
+        
+        # Author filter (if provided)
+        if author and author.strip():
+            count_conditions.append("LOWER(u.Username) LIKE LOWER(?)")
+            count_params.append(f"%{author.strip()}%")
+        
+        # Combine count conditions
+        if count_conditions:
+            count_base_query += " AND " + " AND ".join(count_conditions)
+        
+        total_count = execute_scalar(count_base_query, tuple(count_params)) or 0
+        
+        print(f"Returning {len(recipes)} search results (total: {total_count})")
+        
+        return RecipeListResponse(
+            recipes=recipes,
+            total_count=total_count,
+            limit=limit,
+            offset=offset,
+            from_cache=False
+        )
+        
+    except Exception as e:
+        print(f"Error searching recipes: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to search recipes: {str(e)}"
+        )
+        
 @router.get("", response_model=RecipeListResponse)
 async def get_recipes(
     limit: int = Query(20, ge=1, le=100),
@@ -575,3 +825,4 @@ async def get_recipe_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve recipe: {str(e)}"
         )
+    

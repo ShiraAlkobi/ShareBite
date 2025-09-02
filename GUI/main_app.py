@@ -7,7 +7,7 @@ from presenters.home_presenter import HomePresenter
 from presenters.profile_presenter import ProfilePresenter
 from presenters.recipe_details_presenter import RecipeDetailsPresenter
 from models.login_model import UserData
-
+from PySide6.QtCore import qInstallMessageHandler
 
 class MainWindow(QMainWindow):
     """
@@ -30,6 +30,13 @@ class MainWindow(QMainWindow):
         
         self.setup_ui()
         self.setup_authentication()
+        def qt_message_handler(mode, context, message):
+            if "Unknown property" in message:
+                return  # Ignore unknown property warnings
+            print(message)
+
+        # Add this in your MainWindow.__init__
+        qInstallMessageHandler(qt_message_handler)
     
     def setup_ui(self):
         """Setup main window UI"""
@@ -157,7 +164,7 @@ class MainWindow(QMainWindow):
         profile_widget = self.profile_presenter.get_view()
 
         try:
-            with open('GUI/themes/profile_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
                 profile_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Profile theme file not found")
@@ -250,38 +257,6 @@ class MainWindow(QMainWindow):
         # add_recipe_presenter = AddRecipePresenter(self.access_token)
         # add_recipe_presenter.show_view()
 
-    def show_profile_view(self):
-        """Show profile view in the same window"""
-        # print("Opening profile view...")
-        
-        # if not self.profile_presenter:
-        #     # Create profile presenter with same user data and token
-        #     self.profile_presenter = ProfilePresenter(
-        #         user_data=self.current_user,
-        #         access_token=self.access_token,
-        #         base_url="http://127.0.0.1:8000"
-        #     )
-            
-        #     # Connect profile signals
-        #     self.profile_presenter.home_requested.connect(self.show_home_from_profile)
-        #     self.profile_presenter.logout_requested.connect(self.handle_logout)
-        #     self.profile_presenter.recipe_details_requested.connect(self.show_recipe_details)
-        
-        # # Add profile widget to stack and switch to it
-        # profile_widget = self.profile_presenter.get_view()
-
-        # try:
-        #     with open('GUI/themes/profile_theme.qss', 'r', encoding='utf-8') as f:
-        #         profile_widget.setStyleSheet(f.read())
-        # except FileNotFoundError:
-        #     print("Profile theme file not found")
-        
-        # if self.stack.indexOf(profile_widget) == -1:
-        #     self.stack.addWidget(profile_widget)
-        
-        # self.stack.setCurrentWidget(profile_widget)
-        # self.setWindowTitle(f"Profile - {self.current_user.username}")
-        pass
     
     def show_home_from_profile(self):
         """Return to home view from profile"""
@@ -290,12 +265,6 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(home_widget)
             self.setWindowTitle(f"ShareBite - {self.current_user.username}")
 
-    def show_user_profile(self):
-        """Show user profile window (future implementation)"""
-        print(f"Opening profile for user {self.current_user.username}")
-        # TODO: Implement user profile presenter/view
-        # profile_presenter = ProfilePresenter(self.current_user, self.access_token)
-        # profile_presenter.show_view()
     
     def handle_logout(self):
         """Handle user logout"""

@@ -168,7 +168,7 @@ class HomeModel(QObject):
             filters (dict): Additional filters like cuisine, difficulty, etc.
         """
         try:
-            print(f"ðŸ” Searching recipes: '{query}'")
+            print(f" Searching recipes: '{query}'")
             
             params = {"q": query}
             if filters:
@@ -180,7 +180,7 @@ class HomeModel(QObject):
                 timeout=self.timeout
             )
             
-            print(f"ðŸ“¡ Search response: {response.status_code}")
+            print(f" Search response: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()

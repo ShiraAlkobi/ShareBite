@@ -8,7 +8,7 @@ from database import test_connection, get_database_stats
 # Import authentication and recipe routes
 from routes.auth_routes import router as auth_router
 from routes.recipe_routes import router as recipe_router
-
+from routes.user_routes import router as profile_router
 # Import other routers when you create them
 # from routers import recipes, users, tags
 

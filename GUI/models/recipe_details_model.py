@@ -32,7 +32,7 @@ class RecipeDetailsModel(QObject):
         # Current recipe data
         self.current_recipe = None
         self.timeout = 30
-        self.ollama_timeout = 60  # Longer timeout for AI responses
+        self.ollama_timeout = 120  # Longer timeout for AI responses
     
     def load_recipe_details(self, recipe_id: int):
         """Load detailed recipe information"""
@@ -99,90 +99,59 @@ class RecipeDetailsModel(QObject):
             self.recipe_load_failed.emit(f"Error loading recipe: {str(e)}")
     
     def send_chat_message(self, message: str, recipe_context: Dict[str, Any]):
-        """Send chat message via backend to Ollama with recipe context"""
+        """Send chat message with better timeout handling"""
         try:
-            print(f"Sending recipe chat message: {message}")
-            
-            # Use the new simplified backend endpoint
             chat_payload = {
                 "message": message,
                 "recipe_context": recipe_context
             }
             
             response = self.session.post(
-                f"{self.base_url}/api/v1/chat/recipe-chat",  # New simplified endpoint
+                f"{self.base_url}/api/v1/chat/recipe-chat",
                 json=chat_payload,
-                timeout=90  # Allow time for Ollama processing
+                timeout=45  # REDUCED from 90
             )
             
-            print(f"Recipe chat response status: {response.status_code}")
-            
             if response.status_code == 200:
-                try:
-                    data = response.json()
-                    ai_response = data.get("response", "I couldn't generate a response.").strip()
-                    
-                    if not ai_response:
-                        ai_response = "I couldn't generate a response. Please try rephrasing your question."
-                    
-                    self.ai_response_received.emit(ai_response)
-                    print(f"Recipe chat response received: {len(ai_response)} chars")
-                    
-                except json.JSONDecodeError as e:
-                    print(f"Recipe chat JSON error: {e}")
-                    self.ai_response_failed.emit("Invalid response from AI service")
-                    
+                data = response.json()
+                ai_response = data.get("response", "").strip()
+                
+                if not ai_response:
+                    ai_response = "I couldn't generate a response. Please try a simpler question."
+                
+                self.ai_response_received.emit(ai_response)
             else:
-                print(f"Recipe chat error response: {response.status_code} - {response.text}")
-                try:
-                    error_data = response.json() if response.headers.get('content-type', '').startswith('application/json') else {}
-                    error_message = error_data.get("detail", "Recipe chat failed")
-                except:
-                    error_message = f"Recipe chat failed (Status: {response.status_code})"
-                self.ai_response_failed.emit(error_message)
+                # Quick fallback response
+                self.ai_response_failed.emit("AI service is busy. Please try again.")
                 
         except requests.exceptions.Timeout:
-            print("Recipe chat timeout")
-            self.ai_response_failed.emit("AI response timed out. Please try a shorter question.")
-        except requests.exceptions.ConnectionError:
-            print("Recipe chat connection error")
-            self.network_error.emit("Cannot connect to AI service.")
+            self.ai_response_failed.emit("Response timed out. Try asking a shorter question.")
         except Exception as e:
-            print(f"Recipe chat error: {e}")
-            self.ai_response_failed.emit(f"Chat error: {str(e)}")
-    
+            self.ai_response_failed.emit("Chat temporarily unavailable.")
+            
     def _create_recipe_focused_prompt(self, user_message: str, recipe_context: Dict[str, Any]) -> str:
-        """Create a focused prompt with only the current recipe context"""
+        """Create a focused prompt with strict length limits"""
         
-        # Extract and clean recipe data
-        title = recipe_context.get('title', 'Unknown Recipe')
-        description = recipe_context.get('description', 'No description')
-        author = recipe_context.get('author_name', 'Unknown Chef')
-        servings = recipe_context.get('servings', 'Unknown')
-        ingredients = recipe_context.get('ingredients', 'No ingredients')
-        instructions = recipe_context.get('instructions', 'No instructions')
+        # Aggressive truncation for speed
+        title = recipe_context.get('title', 'Recipe')[:40]
+        ingredients = recipe_context.get('ingredients', 'No ingredients')[:150]
+        instructions = recipe_context.get('instructions', 'No instructions')[:200]
         
-        # Create focused prompt
-        prompt = f"""You are a helpful cooking assistant. Answer questions about this specific recipe only.
+        # Ultra-concise prompt
+        prompt = f"""Recipe: {title}
 
-RECIPE: {title}
-BY: {author}
-SERVES: {servings}
-DESCRIPTION: {description}
+    Ingredients: {ingredients}
 
-INGREDIENTS:
-{ingredients}
+    Instructions: {instructions}
 
-INSTRUCTIONS:
-{instructions}
-
-USER QUESTION: {user_message}
-
-Provide a helpful, specific answer about this recipe. Keep your response concise and practical. Focus only on this recipe."""
+    Q: {user_message}
+    A:"""
         
-        print(f"Created prompt length: {len(prompt)} chars")
+        # Hard limit: 600 characters max
+        if len(prompt) > 600:
+            prompt = prompt[:597] + "..."
+        
         return prompt
-    
     def toggle_like_recipe(self, recipe_id: int):
         """Toggle like status for current recipe"""
         try:

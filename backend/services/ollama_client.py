@@ -6,7 +6,25 @@ class OllamaClient:
     def __init__(self, base_url: str = "http://localhost:11434"):  # Change this
         self.base_url = base_url
         self.model_name = "mistral:7b-instruct-q4_0" 
-        
+        self._ensure_model_loaded()  # Add this line
+    
+    def _ensure_model_loaded(self):
+        """Preload model to avoid cold starts"""
+        try:
+            # Send a small warm-up request
+            payload = {
+                "model": self.model_name,
+                "prompt": "Hi",
+                "stream": False,
+                "options": {
+                    "num_predict": 5,
+                    "num_ctx": 256
+                }
+            }
+            requests.post(f"{self.base_url}/api/generate", json=payload, timeout=60)
+            print("Ollama model preloaded")
+        except Exception as e:
+            print(f"Model preload warning: {e}")
     def test_connection(self) -> bool:
         """Test Ollama availability"""
         try:
@@ -16,47 +34,35 @@ class OllamaClient:
             return False
     
     def generate_response(self, prompt: str, system_prompt: str = None) -> Optional[str]:
-        """
-        Generate fast response with optimized settings
-        """
         try:
             payload = {
                 "model": self.model_name,
                 "prompt": prompt,
                 "stream": False,
                 "options": {
-                    "temperature": 0.3,      # Lower = more focused, faster
-                    "top_p": 0.8,            # Reduced for speed
-                    "num_predict": 300,      # Limit response length (was max_tokens)
-                    "num_ctx": 2048,         # Smaller context window
-                    "repeat_penalty": 1.1,   # Prevent repetition
-                    "stop": ["\n\n\n", "User:", "Human:"]  # Stop sequences
+                    "temperature": 0.1,      # Lower = faster, more focused
+                    "top_p": 0.7,            # Reduced for speed
+                    "num_predict": 100,      # REDUCED from 200
+                    "num_ctx": 1024,         # REDUCED from 2048
+                    "repeat_penalty": 1.1,
+                    "stop": ["\n\n", "User:", "Human:", "Question:"]
                 }
             }
             
-            if system_prompt:
-                payload["system"] = system_prompt
-            
-            print(f"Sending to Ollama (length: {len(prompt)} chars)")
+            # Add keep_alive to prevent model unloading
+            payload["keep_alive"] = "5m"
             
             response = requests.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
-                timeout=120  # Reduced from 600 seconds
+                timeout=60  # REDUCED from 120
             )
             
             if response.status_code == 200:
                 result = response.json()
-                ai_response = result.get("response", "").strip()
-                print(f"Generated response: {len(ai_response)} chars")
-                return ai_response
-            else:
-                print(f"Ollama error: {response.status_code}")
-                return None
-                
-        except requests.exceptions.Timeout:
-            print("Ollama timeout after 30 seconds")
+                return result.get("response", "").strip()
             return None
+            
         except Exception as e:
             print(f"Ollama error: {e}")
             return None
