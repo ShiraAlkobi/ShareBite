@@ -251,13 +251,13 @@ class RegisterCard(QFrame):
         return header
     
     def create_content_section(self):
-        """Create modern content section"""
+        """Create modern content section with compact spacing"""
         content = QFrame()
         content.setObjectName("RegisterCardContent")
         
         layout = QVBoxLayout(content)
         layout.setContentsMargins(20, 16, 20, 16)
-        layout.setSpacing(10)
+        layout.setSpacing(8)  # Reduced spacing
         
         # Input fields container
         inputs_container = QFrame()
@@ -265,7 +265,7 @@ class RegisterCard(QFrame):
         
         inputs_layout = QVBoxLayout(inputs_container)
         inputs_layout.setContentsMargins(0, 0, 0, 0)
-        inputs_layout.setSpacing(8)
+        inputs_layout.setSpacing(6)  # Reduced spacing between fields
         
         # Username field
         username_container = self.create_input_field(
@@ -291,13 +291,13 @@ class RegisterCard(QFrame):
         )
         self.confirm_password_input = confirm_container.findChild(QLineEdit)
         
-        # Bio field
+        # Bio field - more compact
         bio_container = QFrame()
         bio_container.setObjectName("InputFieldContainer")
         
         bio_layout = QVBoxLayout(bio_container)
         bio_layout.setContentsMargins(0, 0, 0, 0)
-        bio_layout.setSpacing(4)
+        bio_layout.setSpacing(3)  # Reduced spacing
         
         bio_label = QLabel("About You (Optional)")
         bio_label.setObjectName("InputFieldLabel")
@@ -362,13 +362,13 @@ class RegisterCard(QFrame):
         return footer
     
     def create_input_field(self, label_text, placeholder, is_password=False):
-        """Create modern input field with label"""
+        """Create modern input field with label and compact spacing"""
         container = QFrame()
         container.setObjectName("InputFieldContainer")
         
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setSpacing(2)  # Reduced spacing between label and input
         
         label = QLabel(label_text)
         label.setObjectName("InputFieldLabel")
@@ -408,7 +408,7 @@ class RegisterCard(QFrame):
         self.register_button.setText("Creating account..." if loading else "Create Account")
 
 class LoginSidebar(QFrame):
-    """Login sidebar with features"""
+    """Compact login sidebar with features only"""
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -416,133 +416,77 @@ class LoginSidebar(QFrame):
         self.setup_ui()
     
     def setup_ui(self):
-        """Setup sidebar UI"""
+        """Setup compact sidebar UI with features only"""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(15, 15, 15, 15)
+        main_layout.setContentsMargins(15, 20, 15, 20)
         main_layout.setSpacing(15)
         
-        # Hero section
-        hero_container = QFrame()
-        hero_container.setObjectName("LoginHeroContainer")
-        
-        hero_layout = QVBoxLayout(hero_container)
-        hero_layout.setAlignment(Qt.AlignCenter)
-        hero_layout.setSpacing(15)
-        hero_layout.setContentsMargins(20, 20, 20, 20)
-        
-        hero_title = QLabel("Welcome to\nShareBite!")
-        hero_title.setObjectName("LoginHeroTitle")
-        hero_title.setAlignment(Qt.AlignCenter)
-        hero_title.setWordWrap(True)
-        
-        hero_subtitle = QLabel("Join our vibrant community of food lovers and recipe creators!")
-        hero_subtitle.setObjectName("LoginHeroSubtitle")
-        hero_subtitle.setAlignment(Qt.AlignCenter)
-        hero_subtitle.setWordWrap(True)
-        
-        hero_layout.addWidget(hero_title)
-        hero_layout.addWidget(hero_subtitle)
-        
-        # Stats section
-        stats_container = QFrame()
-        stats_container.setObjectName("LoginStatsContainer")
-        
-        stats_layout = QVBoxLayout(stats_container)
-        stats_layout.setContentsMargins(15, 15, 15, 15)
-        stats_layout.setSpacing(10)
-        
-        stats_title = QLabel("Join Thousands!")
-        stats_title.setObjectName("LoginStatsTitle")
-        stats_title.setAlignment(Qt.AlignCenter)
-        
-        stats_grid = QFrame()
-        stats_grid.setObjectName("LoginStatsGrid")
-        
-        grid_layout = QHBoxLayout(stats_grid)
-        grid_layout.setSpacing(10)
-        
-        # Create stat items
-        stats = [
-            ("15K+", "Recipes"),
-            ("8K+", "Chefs"), 
-            ("50K+", "Likes")
-        ]
-        
-        for number, label in stats:
-            stat_item = self.create_stat_item(number, label)
-            grid_layout.addWidget(stat_item)
-        
-        stats_layout.addWidget(stats_title)
-        stats_layout.addWidget(stats_grid)
-        
-        # Features section
+        # Features section only
         features_container = QFrame()
         features_container.setObjectName("LoginFeaturesContainer")
         
         features_layout = QVBoxLayout(features_container)
-        features_layout.setSpacing(10)
         features_layout.setContentsMargins(15, 15, 15, 15)
+        features_layout.setSpacing(8)
         
-        features_title = QLabel("What You'll Love")
+        features_title = QLabel("Why Join Us?")
         features_title.setObjectName("LoginFeaturesTitle")
         features_title.setAlignment(Qt.AlignCenter)
         
         features = [
-            ("Share Instantly", "Upload recipes in seconds"),
-            ("Global Community", "Connect with chefs worldwide"),
-            ("Smart Discovery", "Find recipes you'll love"),
-            ("Save Favorites", "Build your cookbook")
+            ("🚀", "Quick Share", "Upload recipes instantly"),
+            ("🌍", "Global Community", "Connect with food lovers worldwide"),
+            ("🔍", "Smart Discovery", "Find recipes you'll love"),
+            ("❤️", "Save & Organize", "Build your digital cookbook")
         ]
         
         features_list = QFrame()
         features_list.setObjectName("LoginFeaturesList")
         
         features_list_layout = QVBoxLayout(features_list)
-        features_list_layout.setSpacing(8)
+        features_list_layout.setSpacing(6)
         
-        for title, description in features:
-            feature_item = self.create_feature_item(title, description)
+        for icon, title, description in features:
+            feature_item = self.create_compact_feature_item(icon, title, description)
             features_list_layout.addWidget(feature_item)
         
         features_layout.addWidget(features_title)
         features_layout.addWidget(features_list)
         
-        main_layout.addWidget(hero_container)
-        main_layout.addWidget(stats_container)
         main_layout.addWidget(features_container)
         main_layout.addStretch()
     
-    def create_stat_item(self, number, label):
-        """Create individual stat item"""
-        item = QFrame()
-        item.setObjectName("LoginStatItem")
-        
-        layout = QVBoxLayout(item)
-        layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(4)
-        layout.setContentsMargins(8, 8, 8, 8)
-        
-        number_label = QLabel(number)
-        number_label.setObjectName("LoginStatNumber")
-        number_label.setAlignment(Qt.AlignCenter)
-        
-        text_label = QLabel(label)
-        text_label.setObjectName("LoginStatLabel")
-        text_label.setAlignment(Qt.AlignCenter)
-        
-        layout.addWidget(number_label)
-        layout.addWidget(text_label)
-        
-        return item
-    
-    def create_feature_item(self, title, description):
-        """Create feature item"""
+    def create_compact_feature_item(self, icon, title, description):
+        """Create compact feature item with icon, title and description"""
         item = QFrame()
         item.setObjectName("LoginFeatureItem")
         
-        layout = QVBoxLayout(item)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(2)
+        layout = QHBoxLayout(item)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(10)
+        layout.setAlignment(Qt.AlignLeft)
+        
+        # Icon container
+        icon_container = QFrame()
+        icon_container.setObjectName("LoginFeatureIconContainer")
+        
+        icon_layout = QVBoxLayout(icon_container)
+        icon_layout.setAlignment(Qt.AlignCenter)
+        icon_layout.setContentsMargins(0, 0, 0, 0)
+        
+        icon_label = QLabel(icon)
+        icon_label.setObjectName("LoginFeatureIcon")
+        icon_label.setAlignment(Qt.AlignCenter)
+        
+        icon_layout.addWidget(icon_label)
+        
+        # Content container
+        content_container = QFrame()
+        content_container.setObjectName("LoginFeatureContent")
+        
+        content_layout = QVBoxLayout(content_container)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(2)
         
         title_label = QLabel(title)
         title_label.setObjectName("LoginFeatureTitle")
@@ -551,8 +495,11 @@ class LoginSidebar(QFrame):
         desc_label.setObjectName("LoginFeatureDesc")
         desc_label.setWordWrap(True)
         
-        layout.addWidget(title_label)
-        layout.addWidget(desc_label)
+        content_layout.addWidget(title_label)
+        content_layout.addWidget(desc_label)
+        
+        layout.addWidget(icon_container)
+        layout.addWidget(content_container, 1)
         
         return item
 
@@ -569,14 +516,22 @@ class LoginView(QWidget):
         self.setup_connections()
     
     def setup_ui(self):
-        """Setup main login UI with scroll support"""
+        """Setup main login UI with scroll support and welcome header"""
         self.setWindowTitle("ShareBite - Sign In")
         # Set reasonable window size
         self.setMinimumSize(700, 500)
         self.setMaximumSize(800, 650)
         self.resize(750, 580)
         
-        # Create scroll area
+        # Main layout for the window
+        window_layout = QVBoxLayout(self)
+        window_layout.setContentsMargins(0, 0, 0, 0)
+        window_layout.setSpacing(0)
+        
+        # Welcome header section (moved from sidebar)
+        self.setup_welcome_header(window_layout)
+        
+        # Create scroll area for content below header
         scroll_area = QScrollArea(self)
         scroll_area.setWidgetResizable(True)
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -587,17 +542,12 @@ class LoginView(QWidget):
         content_widget = QWidget()
         content_widget.setObjectName("LoginContentWidget")
         
-        # Main layout for the window
-        window_layout = QVBoxLayout(self)
-        window_layout.setContentsMargins(0, 0, 0, 0)
-        window_layout.addWidget(scroll_area)
-        
         # Content layout
         content_layout = QHBoxLayout(content_widget)
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
         
-        # Left sidebar
+        # Left sidebar (now smaller)
         self.sidebar = LoginSidebar()
         content_layout.addWidget(self.sidebar)
         
@@ -607,9 +557,48 @@ class LoginView(QWidget):
         
         # Set the content widget to scroll area
         scroll_area.setWidget(content_widget)
+        window_layout.addWidget(scroll_area)
         
         # Loading indicator
         self.setup_loading_indicator()
+    
+    def setup_welcome_header(self, main_layout):
+        """Setup welcome header section like in home view"""
+        header = QFrame()
+        header.setObjectName("LoginWelcomeHeader")
+        header.setFixedHeight(80)
+        
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(20, 10, 20, 10)
+        header_layout.setSpacing(15)
+        
+        # Welcome container
+        welcome_container = QFrame()
+        welcome_container.setObjectName("LoginWelcomeContainer")
+        
+        welcome_layout = QHBoxLayout(welcome_container)
+        welcome_layout.setSpacing(12)
+        
+        # App icon/emoji
+        welcome_icon = QLabel("🍴")
+        welcome_icon.setObjectName("LoginWelcomeIcon")
+        
+        # App brand
+        brand_label = QLabel("ShareBite")
+        brand_label.setObjectName("LoginWelcomeBrand")
+        
+        # Welcome tagline
+        tagline_label = QLabel("Where culinary creativity meets community")
+        tagline_label.setObjectName("LoginWelcomeTagline")
+        
+        welcome_layout.addWidget(welcome_icon)
+        welcome_layout.addWidget(brand_label)
+        welcome_layout.addWidget(tagline_label)
+        welcome_layout.addStretch()
+        
+        header_layout.addWidget(welcome_container)
+        
+        main_layout.addWidget(header)
     
     def create_right_section(self):
         """Create right authentication section"""

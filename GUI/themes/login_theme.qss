@@ -75,125 +75,71 @@ QFrame#LoginContentWrapper {
     border: none;
 }
 
+/* ===== HEADER SECTION - MOVED FROM SIDEBAR ===== */
+QFrame#LoginWelcomeHeader {
+    background: rgba(113, 80, 223, 0.95);
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(20px);
+    min-height: 80px;
+    max-height: 80px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+QFrame#LoginWelcomeContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#LoginWelcomeIcon {
+    font-size: 28px;
+    color: white;
+    background: transparent;
+}
+
+QLabel#LoginWelcomeBrand {
+    font-size: 28px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    background: transparent;
+}
+
+QLabel#LoginWelcomeTagline {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    background: transparent;
+}
+
 /* ===== LEFT SECTION - BRANDING ===== */
 QFrame#LoginLeftSection {
-    background: rgba(215, 205, 235, 0.92);
+    background: rgba(255, 255, 255, 0.15);
     border: none;
     border-radius: 20px;
     margin: 15px;
     backdrop-filter: blur(30px);
-    min-width: 280px;
-    max-width: 320px;
-}
-
-QFrame#LoginHeroContainer {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:1,
-        stop:0 rgba(255, 107, 53, 0.9),
-        stop:1 rgba(245, 87, 108, 0.9)
-    );
-    border-radius: 15px;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    min-height: 120px;
-}
-
-QLabel#LoginHeroEmoji {
-    font-size: 40px;
-    background: transparent;
-    padding: 8px;
-}
-
-QLabel#LoginHeroTitle {
-    font-size: 28px;
-    font-weight: 900;
-    color: white;
-    background: transparent;
-    line-height: 1.2;
-}
-
-QLabel#LoginHeroSubtitle {
-    font-size: 13px;
-    color: #C8A2C8;
-    background: transparent;
-    line-height: 1.4;
-    font-weight: 500;
-}
-
-/* ===== STATS SECTION ===== */
-QFrame#LoginStatsContainer {
-    background: #bf55d7ce;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 8px 0px;
-}
-
-QLabel#LoginStatsTitle {
-    font-size: 16px;
-    font-weight: 800;
-    color: white;
-    background: transparent;
-    margin-bottom: 8px;
-}
-
-QFrame#LoginStatsGrid {
-    background: transparent;
-    border: none;
-}
-
-QFrame#LoginStatItem {
-    background: qlineargradient(
-        x1:0, y1:0, x2:1, y2:0,
-        stop:0 #5a67d8,
-        stop:1 #6b46c1
-    );
-    border-radius: 10px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    min-height: 60px;
-    margin: 3px;
-}
-
-QFrame#LoginStatItem:hover {
-    background: qlineargradient(
-        x1:0, y1:0, x2:0, y2:1,
-        stop:0 rgba(66, 153, 225, 1.0),
-        stop:1 rgba(16, 185, 129, 1.0)
-    );
-    border: 2px solid rgba(255, 255, 255, 0.5);
-}
-
-QLabel#LoginStatEmoji {
-    font-size: 18px;
-    background: transparent;
-}
-
-QLabel#LoginStatNumber {
-    font-size: 16px;
-    font-weight: 900;
-    color: white;
-    background: transparent;
-}
-
-QLabel#LoginStatLabel {
-    font-size: 10px;
-    color: white;
-    background: transparent;
-    font-weight: 600;
+    min-width: 280px;
+    max-width: 300px;
 }
 
 /* ===== FEATURES SECTION ===== */
 QFrame#LoginFeaturesContainer {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 8px 0px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    margin: 10px 0px;
+    backdrop-filter: blur(20px);
 }
 
 QLabel#LoginFeaturesTitle {
-    font-size: 25px;
+    font-size: 20px;
     font-weight: 800;
-    color: #764ba2;
+    color: #2d3748;
     background: transparent;
     margin-bottom: 10px;
+    letter-spacing: 0.5px;
 }
 
 QFrame#LoginFeaturesList {
@@ -204,22 +150,23 @@ QFrame#LoginFeaturesList {
 QFrame#LoginFeatureItem {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 255, 255, 0.1),
-        stop:1 rgba(255, 255, 255, 0.05)
+        stop:0 rgba(255, 255, 255, 0.2),
+        stop:1 rgba(255, 255, 255, 0.1)
     );
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 2px 0px;
-    max-height: 40px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    margin: 4px 0px;
+    min-height: 45px;
 }
 
 QFrame#LoginFeatureItem:hover {
     background: qlineargradient(
         x1:0, y1:0, x2:1, y2:0,
-        stop:0 rgba(255, 255, 255, 0.2),
-        stop:1 rgba(255, 255, 255, 0.1)
+        stop:0 rgba(255, 255, 255, 0.3),
+        stop:1 rgba(255, 255, 255, 0.2)
     );
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    transform: translateY(-1px);
 }
 
 QFrame#LoginFeatureIconContainer {
@@ -228,12 +175,12 @@ QFrame#LoginFeatureIconContainer {
         stop:0 rgba(245, 158, 11, 0.9),
         stop:1 rgba(245, 87, 108, 0.9)
     );
-    border-radius: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    min-width: 40px;
-    max-width: 40px;
-    min-height: 40px;
-    max-height: 40px;
+    border-radius: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
 }
 
 QLabel#LoginFeatureIcon {
@@ -243,15 +190,16 @@ QLabel#LoginFeatureIcon {
 }
 
 QLabel#LoginFeatureTitle {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 700;
-    color: #AB47BC;
+    color: #2d3748;
     background: transparent;
+    letter-spacing: 0.3px;
 }
 
 QLabel#LoginFeatureDesc {
-    font-size: 14px;
-    color: #764ba2;
+    font-size: 11px;
+    color: #4a5568;
     background: transparent;
     font-weight: 500;
 }
@@ -270,7 +218,8 @@ QFrame#LoginCardsContainer {
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     min-width: 380px;
     max-width: 420px;
-    max-height: 450px;
+    min-height: 500px;
+    max-height: 550px;
 }
 
 /* ===== LOGIN CARD ===== */
@@ -538,12 +487,12 @@ QLineEdit#RegisterFormInput {
     background: rgba(247, 250, 252, 0.9);
     border: 2px solid #e2e8f0;
     border-radius: 10px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     font-size: 13px;
     color: #2d3748;
     font-weight: 500;
-    min-height: 36px;
-    max-height: 36px;
+    min-height: 28px;
+    max-height: 28px;
 }
 
 QLineEdit#RegisterFormInput:focus {
@@ -561,12 +510,12 @@ QTextEdit#RegisterBioInput {
     background: rgba(247, 250, 252, 0.9);
     border: 2px solid #e2e8f0;
     border-radius: 10px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     font-size: 13px;
     color: #2d3748;
     font-weight: 500;
-    min-height: 60px;
-    max-height: 60px;
+    min-height: 50px;
+    max-height: 50px;
 }
 
 QTextEdit#RegisterBioInput:focus {
