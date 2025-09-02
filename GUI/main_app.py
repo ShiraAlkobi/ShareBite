@@ -5,6 +5,7 @@ from PySide6.QtGui import QFont
 from presenters.login_presenter import LoginPresenter
 from presenters.home_presenter import HomePresenter
 from presenters.profile_presenter import ProfilePresenter
+from presenters.add_recipe_presenter import AddRecipePresenter
 from presenters.recipe_details_presenter import RecipeDetailsPresenter
 from models.login_model import UserData
 from PySide6.QtCore import qInstallMessageHandler
@@ -26,6 +27,7 @@ class MainWindow(QMainWindow):
         self.login_presenter = None
         self.home_presenter = None
         self.profile_presenter = None
+        self.add_recipe_presenter = None
         self.recipe_details_presenter = None
         
         self.setup_ui()
@@ -39,16 +41,73 @@ class MainWindow(QMainWindow):
         qInstallMessageHandler(qt_message_handler)
     
     def setup_ui(self):
-        """Setup main window UI"""
+        """Setup main window UI with dynamic sizing"""
         self.setWindowTitle("ShareBite - Recipe Sharing Platform")
-        self.setMinimumSize(1200, 800)
+        
+        # Start with smaller default size - will be adjusted per view
+        self.setMinimumSize(600, 400)
+        
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
+        
+        # Connect stack widget signal to handle size changes
+        self.stack.currentChanged.connect(self.adjust_window_size)
+        
         self.show()
+    
+    def adjust_window_size(self):
+        """Adjust window size based on current widget"""
+        current_widget = self.stack.currentWidget()
+        if current_widget:
+            # Get the preferred size from the current widget
+            preferred_size = current_widget.sizeHint()
+            
+            # Set minimum and maximum sizes based on widget type
+            if hasattr(current_widget, 'objectName'):
+                widget_name = current_widget.objectName()
+                
+                if widget_name == "LoginView":
+                    # Login view sizing
+                    self.setMinimumSize(700, 500)
+                    self.setMaximumSize(800, 650)
+                    self.resize(750, 580)
+                    
+                elif widget_name == "HomeView":
+                    # Home view sizing - larger for content
+                    self.setMinimumSize(900, 600)
+                    self.setMaximumSize(1200, 800)
+                    self.resize(1000, 700)
+                    
+                elif widget_name == "ProfileView":
+                    # Profile view sizing
+                    self.setMinimumSize(900, 600)
+                    self.setMaximumSize(1100, 750)
+                    self.resize(1000, 680)
+                    
+                elif widget_name == "AddRecipeView":
+                    # Add recipe view sizing
+                    self.setMinimumSize(800, 600)
+                    self.setMaximumSize(1000, 800)
+                    self.resize(900, 700)
+                
+                else:
+                    # Default sizing for unknown widgets
+                    self.setMinimumSize(700, 500)
+                    self.setMaximumSize(1200, 800)
+            
+            # Center the window on screen after resize
+            self.center_on_screen()
+    
+    def center_on_screen(self):
+        """Center the window on the screen"""
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+        window_geometry = self.frameGeometry()
         
-        # Main content will be managed by individual presenters
-        # No central widget needed since each view is a separate window
-        
+        center_point = screen_geometry.center()
+        window_geometry.moveCenter(center_point)
+        self.move(window_geometry.topLeft())
+    
     def setup_authentication(self):
         """Setup authentication system"""
         # Initialize login presenter (microfrontend)
@@ -76,6 +135,7 @@ class MainWindow(QMainWindow):
             self.stack.addWidget(login_widget)
 
         self.stack.setCurrentWidget(login_widget)
+        # Window size will be adjusted automatically by adjust_window_size()
     
     def on_authentication_success(self, user_data: UserData, access_token: str):
         """
@@ -88,6 +148,7 @@ class MainWindow(QMainWindow):
         self.current_user = user_data
         self.access_token = access_token
         
+        print(f"Authentication successful!")
         print(f"Authentication successful!")
         print(f"   User: {user_data.username}")
         print(f"   Email: {user_data.email}")
@@ -107,10 +168,12 @@ class MainWindow(QMainWindow):
             error_message (str): Error message
         """
         print(f"Authentication failed: {error_message}")
+        print(f"Authentication failed: {error_message}")
         # Login view will handle showing the error
     
     def show_home_view(self):
         """Initialize and show home view"""
+        print("Initializing home view...")
         print("Initializing home view...")
         
         # Create home presenter with user data and token
@@ -122,7 +185,7 @@ class MainWindow(QMainWindow):
         
         # Connect home view signals
         self.home_presenter.recipe_details_requested.connect(self.show_recipe_details)
-        self.home_presenter.add_recipe_requested.connect(self.show_add_recipe)
+        self.home_presenter.add_recipe_requested.connect(self.show_add_recipe_view)
         self.home_presenter.user_profile_requested.connect(self.show_profile_view)
         self.home_presenter.logout_requested.connect(self.handle_logout)
         
@@ -145,7 +208,7 @@ class MainWindow(QMainWindow):
 
     def show_profile_view(self):
         """Show profile view in the same window"""
-        print("👤 Opening profile view...")
+        print("Opening profile view...")
         
         if not self.profile_presenter:
             # Create profile presenter with same user data and token
@@ -249,6 +312,10 @@ class MainWindow(QMainWindow):
             # You could call a refresh method on home presenter here
             # self.home_presenter.refresh_recipe_in_feed(recipe_id)
             pass
+        print(f"Opening recipe details for recipe {recipe_id}")
+        # TODO: Implement recipe details presenter/view
+        # recipe_details_presenter = RecipeDetailsPresenter(recipe_id, self.access_token)
+        # recipe_details_presenter.show_view()
     
     def show_add_recipe(self):
         """Show add recipe window (future implementation)"""
@@ -265,6 +332,56 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(home_widget)
             self.setWindowTitle(f"ShareBite - {self.current_user.username}")
 
+    def show_add_recipe_view(self):
+        """Initialize and show add recipe view"""
+        print("Initializing add recipe view...")
+        
+        if not self.add_recipe_presenter:
+            # Create add recipe presenter
+            self.add_recipe_presenter = AddRecipePresenter(
+                user_data=self.current_user,
+                access_token=self.access_token,
+                base_url="http://127.0.0.1:8000"
+            )
+            
+            # Connect add recipe signals
+            self.add_recipe_presenter.home_requested.connect(self.show_home_from_add_recipe)
+            self.add_recipe_presenter.logout_requested.connect(self.handle_logout)
+            self.add_recipe_presenter.recipe_created.connect(self.on_recipe_created)
+        
+        # Add to stack and show
+        add_recipe_widget = self.add_recipe_presenter.get_view()
+        
+        try:
+            with open('GUI/themes/add_recipe_theme.qss', 'r', encoding='utf-8') as f:
+                add_recipe_widget.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print("Add recipe theme file not found")
+        
+        if self.stack.indexOf(add_recipe_widget) == -1:
+            self.stack.addWidget(add_recipe_widget)
+        
+        self.stack.setCurrentWidget(add_recipe_widget)
+        self.setWindowTitle(f"Add Recipe - {self.current_user.username}")
+
+    def show_home_from_add_recipe(self):
+        """Return to home view from add recipe"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"ShareBite - {self.current_user.username}")
+
+    def on_recipe_created(self, recipe_id: int):
+        """Handle successful recipe creation"""
+        print(f"Recipe created with ID: {recipe_id}")
+        
+        # Refresh home view if it exists
+        if self.home_presenter:
+            # Trigger a refresh of the home feed
+            self.home_presenter.handle_refresh_request()
+        
+        # Show success message (optional)
+        print("Recipe created successfully! Returning to home...")
     
     def handle_logout(self):
         """Handle user logout"""

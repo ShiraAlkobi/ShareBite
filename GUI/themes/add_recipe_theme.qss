@@ -1,0 +1,631 @@
+/* ShareBite Add Recipe Theme - Modern Bold Design */
+
+/* ===== MAIN WINDOW ===== */
+QWidget#AddRecipeView {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.3 #764ba2,
+        stop:0.7 #f093fb,
+        stop:1 #f5576c
+    );
+    min-width: 1000px;
+    min-height: 700px;
+}
+
+QWidget#AddRecipeContentWidget {
+    background: transparent;
+    border: none;
+}
+
+/* ===== HEADER SECTION ===== */
+QFrame#AddRecipeHeaderSection {
+    background: rgba(113, 80, 223, 0.95);
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(20px);
+    min-height: 70px;
+    max-height: 70px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+QFrame#AddRecipeBrandContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#AddRecipeBrandLogo {
+    font-size: 26px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    background: transparent;
+}
+
+QLabel#AddRecipeBrandTagline {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    background: transparent;
+}
+
+QFrame#AddRecipeNavContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#AddRecipeNavButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:1 rgba(255, 255, 255, 0.08)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#AddRecipeNavButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.25),
+        stop:1 rgba(255, 255, 255, 0.15)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#AddRecipeLogoutButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 87, 108, 0.9),
+        stop:1 rgba(239, 68, 68, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#AddRecipeLogoutButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 1.0),
+        stop:1 rgba(220, 38, 38, 1.0)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ===== FORM CONTAINER ===== */
+QFrame#AddRecipeFormContainer {
+    background: transparent;
+    border: none;
+    margin: 0px 20px;
+}
+
+QFrame#AddRecipeFormCard {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 20px;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== FORM FIELDS ===== */
+QLabel#AddRecipeFieldLabel {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    background: transparent;
+    margin-bottom: 5px;
+}
+
+QLineEdit#AddRecipeFieldInput {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    min-height: 20px;
+}
+
+QLineEdit#AddRecipeFieldInput:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+QLineEdit#AddRecipeFieldInput:hover {
+    border: 2px solid #a0aec0;
+    background: white;
+}
+
+QTextEdit#AddRecipeDescriptionInput,
+QTextEdit#AddRecipeIngredientsInput,
+QTextEdit#AddRecipeInstructionsInput {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    font-family: "Segoe UI", sans-serif;
+    line-height: 1.4;
+}
+
+QTextEdit#AddRecipeDescriptionInput:focus,
+QTextEdit#AddRecipeIngredientsInput:focus,
+QTextEdit#AddRecipeInstructionsInput:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+QTextEdit#AddRecipeDescriptionInput:hover,
+QTextEdit#AddRecipeIngredientsInput:hover,
+QTextEdit#AddRecipeInstructionsInput:hover {
+    border: 2px solid #a0aec0;
+    background: white;
+}
+
+QSpinBox#AddRecipeServingsInput {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    min-height: 20px;
+    min-width: 120px;
+}
+
+QSpinBox#AddRecipeServingsInput:focus {
+    background: white;
+    border: 2px solid #667eea;
+}
+
+QSpinBox#AddRecipeServingsInput:hover {
+    border: 2px solid #a0aec0;
+    background: white;
+}
+
+QSpinBox#AddRecipeServingsInput::up-button,
+QSpinBox#AddRecipeServingsInput::down-button {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 6px;
+    width: 20px;
+    margin: 2px;
+}
+
+QSpinBox#AddRecipeServingsInput::up-button:hover,
+QSpinBox#AddRecipeServingsInput::down-button:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+/* ===== PHOTO UPLOAD SECTION ===== */
+QFrame#AddRecipePhotoContainer {
+    background: rgba(247, 250, 252, 0.5);
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    min-width: 300px;
+}
+
+QLabel#AddRecipePhotoPreview {
+    background: rgba(255, 255, 255, 0.8);
+    border: 2px dashed rgba(102, 126, 234, 0.3);
+    border-radius: 10px;
+    color: #718096;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 20px;
+}
+
+QPushButton#AddRecipeUploadButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    min-width: 120px;
+}
+
+QPushButton#AddRecipeUploadButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+QPushButton#AddRecipeRemovePhotoButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 0.9),
+        stop:1 rgba(220, 38, 38, 0.9)
+    );
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 20px;
+    min-width: 120px;
+}
+
+QPushButton#AddRecipeRemovePhotoButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(220, 38, 38, 1.0),
+        stop:1 rgba(185, 28, 28, 1.0)
+    );
+}
+
+/* ===== TAGS WIDGET ===== */
+QFrame#AddRecipeTagsWidget {
+    background: rgba(247, 250, 252, 0.3);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 15px;
+    margin-top: 10px;
+}
+
+QLabel#AddRecipeTagsHeader {
+    font-size: 18px;
+    font-weight: 800;
+    color: #2d3748;
+    background: transparent;
+    margin-bottom: 10px;
+}
+
+QFrame#AddRecipeTagInputFrame {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    margin: 5px 0px;
+}
+
+QLineEdit#AddRecipeTagInput {
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    min-height: 20px;
+}
+
+QLineEdit#AddRecipeTagInput:focus {
+    background: rgba(102, 126, 234, 0.05);
+    outline: none;
+}
+
+QPushButton#AddRecipeTagAddButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    min-width: 80px;
+}
+
+QPushButton#AddRecipeTagAddButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #5a67d8,
+        stop:1 #6b46c1
+    );
+}
+
+QFrame#AddRecipeCommonTagsFrame {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    margin: 5px 0px;
+}
+
+QLabel#AddRecipeCommonTagsLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    background: transparent;
+}
+
+QFrame#AddRecipeCommonTagsContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#AddRecipeCommonTagButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.1),
+        stop:1 rgba(118, 75, 162, 0.1)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    margin: 2px;
+}
+
+QPushButton#AddRecipeCommonTagButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.2),
+        stop:1 rgba(118, 75, 162, 0.2)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.5);
+}
+
+QFrame#AddRecipeSelectedTagsFrame {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    margin: 5px 0px;
+}
+
+QLabel#AddRecipeSelectedTagsLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #4a5568;
+    background: transparent;
+}
+
+QWidget#AddRecipeSelectedTagsContainer {
+    background: transparent;
+    border: none;
+}
+
+/* ===== TAG WIDGETS ===== */
+QFrame#AddRecipeTagWidget {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: none;
+    border-radius: 12px;
+    margin: 2px;
+    max-height: 24px;
+}
+
+QLabel#AddRecipeTagLabel {
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    background: transparent;
+    padding: 2px 4px;
+}
+
+QPushButton#AddRecipeTagRemoveButton {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 12px;
+    font-weight: 900;
+    max-width: 20px;
+    max-height: 20px;
+}
+
+QPushButton#AddRecipeTagRemoveButton:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* ===== ACTION BUTTONS ===== */
+QFrame#AddRecipeActionsContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#AddRecipeCancelButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(113, 128, 150, 0.8),
+        stop:1 rgba(74, 85, 104, 0.8)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 10px;
+    min-width: 100px;
+}
+
+QPushButton#AddRecipeCancelButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(74, 85, 104, 0.9),
+        stop:1 rgba(45, 55, 72, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#AddRecipeCreateButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #10b981,
+        stop:1 #059669
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 12px 30px;
+    border-radius: 10px;
+    min-width: 140px;
+    letter-spacing: 1px;
+}
+
+QPushButton#AddRecipeCreateButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #059669,
+        stop:1 #047857
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+QPushButton#AddRecipeCreateButton:pressed {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #047857,
+        stop:1 #065f46
+    );
+}
+
+/* ===== MESSAGE LABEL ===== */
+QLabel#AddRecipeMessageLabel {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 10px 20px;
+}
+
+QLabel#AddRecipeMessageLabel[error="false"] {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+QScrollBar:vertical {
+    background: rgba(255, 255, 255, 0.1);
+    width: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ===== HOVER ANIMATIONS ===== */
+QPushButton {
+    transition: all 0.3s ease;
+}
+
+QFrame:hover {
+    transition: all 0.2s ease;
+}
+
+QLineEdit:focus, QTextEdit:focus {
+    transition: all 0.2s ease;
+}
+
+/* ===== ACCESSIBILITY FOCUS INDICATORS ===== */
+QWidget:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1200px) {
+    QFrame#AddRecipeFormCard {
+        margin: 10px;
+    }
+    
+    QLabel#AddRecipeBrandLogo {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 900px) {
+    QLabel#AddRecipeFieldLabel {
+        font-size: 14px;
+    }
+    
+    QLineEdit#AddRecipeFieldInput,
+    QTextEdit#AddRecipeDescriptionInput,
+    QTextEdit#AddRecipeIngredientsInput,
+    QTextEdit#AddRecipeInstructionsInput {
+        font-size: 13px;
+        padding: 10px 14px;
+    }
+}
