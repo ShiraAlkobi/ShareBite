@@ -1,0 +1,474 @@
+/* ShareBite Recipe Details Theme - Matching Home View Design */
+
+/* ===== MAIN WIDGET ===== */
+QWidget#RecipeDetailsView {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.2 #764ba2,
+        stop:0.4 #f093fb,
+        stop:0.6 #f5576c,
+        stop:0.8 #4facfe,
+        stop:1 #00f2fe
+    );
+    min-width: 700px;
+    min-height: 500px;
+    max-width: 1000px;
+    max-height: 700px;
+}
+
+/* ===== HEADER SECTION ===== */
+QFrame#RecipeDetailsHeader {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 107, 53, 0.95),
+        stop:0.3 rgba(245, 87, 108, 0.95),
+        stop:0.7 rgba(79, 172, 254, 0.95),
+        stop:1 rgba(0, 242, 254, 0.95)
+    );
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(30px);
+    border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+QPushButton#BackButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #ef4444,
+        stop:0.3 #f97316,
+        stop:0.7 #eab308,
+        stop:1 #22c55e
+    );
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 10px 16px;
+    min-height: 35px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+QPushButton#BackButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #dc2626,
+        stop:0.3 #ea580c,
+        stop:0.7 #ca8a04,
+        stop:1 #16a34a
+    );
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
+
+QLabel#HeaderTitle {
+    font-size: 24px;
+    font-weight: 900;
+    color: black;
+    background: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== SPLITTER ===== */
+QSplitter#RecipeDetailsSplitter {
+    background: transparent;
+    border: none;
+}
+
+QSplitter::handle {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.3),
+        stop:1 rgba(102, 126, 234, 0.3)
+    );
+    width: 3px;
+    border-radius: 1px;
+}
+
+QSplitter::handle:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.5),
+        stop:1 rgba(102, 126, 234, 0.5)
+    );
+}
+
+/* ===== SCROLL AREA ===== */
+QScrollArea#RecipeScrollArea {
+    background: transparent;
+    border: none;
+}
+
+QWidget#RecipeContentWidget {
+    background: transparent;
+}
+
+/* ===== RECIPE HEADER FRAME ===== */
+QFrame#RecipeHeaderFrame {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:0.5 rgba(240, 147, 251, 0.1),
+        stop:1 rgba(79, 172, 254, 0.15)
+    );
+    border-radius: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    padding: 20px;
+}
+
+QLabel#RecipeImage {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border-radius: 12px;
+    color: white;
+    font-size: 48px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+QLabel#RecipeTitle {
+    font-size: 24px;
+    font-weight: 900;
+    color: black;
+    background: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+QLabel#RecipeAuthor {
+    font-size: 16px;
+    color: black;
+    font-weight: 700;
+    background: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+QLabel#RecipeMeta {
+    font-size: 14px;
+    color:black;
+    font-weight: 600;
+    background: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+QLabel#RecipeDescription {
+    font-size: 15px;
+    color:black;
+    font-weight: 500;
+    background: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== CONTENT SECTIONS ===== */
+QFrame#IngredientsFrame,
+QFrame#InstructionsFrame {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:0.5 rgba(240, 147, 251, 0.1),
+        stop:1 rgba(79, 172, 254, 0.15)
+    );
+    border-radius: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    padding: 16px;
+}
+
+QLabel#SectionTitle {
+    font-size: 20px;
+    font-weight: 900;
+    color: black;
+    background: transparent;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+QTextEdit#IngredientsContent,
+QTextEdit#InstructionsContent {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+QTextEdit#IngredientsContent:focus,
+QTextEdit#InstructionsContent:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+/* ===== RECIPE ACTIONS ===== */
+QFrame#RecipeActionsFrame {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:0.5 rgba(240, 147, 251, 0.1),
+        stop:1 rgba(79, 172, 254, 0.15)
+    );
+    border-radius: 18px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(20px);
+    padding: 16px;
+}
+
+QPushButton#DetailLikeButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(239, 68, 68, 0.2),
+        stop:1 rgba(236, 72, 153, 0.2)
+    );
+    border: 2px solid rgba(239, 68, 68, 0.4);
+    border-radius: 12px;
+    color: #ef4444;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 20px;
+    min-height: 40px;
+}
+
+QPushButton#DetailLikeButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(239, 68, 68, 0.3),
+        stop:1 rgba(236, 72, 153, 0.3)
+    );
+    border: 2px solid rgba(239, 68, 68, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+}
+
+QPushButton#DetailFavoriteButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(245, 158, 11, 0.2),
+        stop:1 rgba(251, 191, 36, 0.2)
+    );
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: 12px;
+    color: #f59e0b;
+    font-size: 18px;
+    font-weight: 700;
+    padding: 12px 20px;
+    min-height: 40px;
+}
+
+QPushButton#DetailFavoriteButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(245, 158, 11, 0.3),
+        stop:1 rgba(251, 191, 36, 0.3)
+    );
+    border: 2px solid rgba(245, 158, 11, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+}
+
+/* ===== CHAT WIDGET ===== */
+QFrame#ChatWidget {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 0.95),
+        stop:0.5 rgba(240, 147, 251, 0.1),
+        stop:1 rgba(255, 255, 255, 0.95)
+    );
+    border-radius: 18px;
+    border: 3px solid rgba(102, 126, 234, 0.3);
+    backdrop-filter: blur(20px);
+}
+
+QFrame#ChatHeader {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border-radius: 15px 15px 0px 0px;
+    border: none;
+    padding: 12px 16px;
+}
+
+QLabel#ChatIcon {
+    font-size: 20px;
+    color: white;
+    background: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+QLabel#ChatTitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: white;
+    background: transparent;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+QTextEdit#ChatDisplay {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    color: #2d3748;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+QFrame#ChatInputFrame {
+    background: transparent;
+    border: none;
+    padding: 8px 0px;
+}
+
+QLineEdit#ChatInput {
+    background: rgba(247, 250, 252, 0.9);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: #2d3748;
+    font-weight: 500;
+    min-height: 40px;
+}
+
+QLineEdit#ChatInput:focus {
+    background: white;
+    border: 2px solid #667eea;
+    outline: none;
+}
+
+QPushButton#ChatSendButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.3 #764ba2,
+        stop:0.7 #f093fb,
+        stop:1 #f5576c
+    );
+    border: 3px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 800;
+    padding: 12px 20px;
+    min-height: 40px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+QPushButton#ChatSendButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #5a67d8,
+        stop:0.3 #6b46c1,
+        stop:0.7 #e879f9,
+        stop:1 #ef4444
+    );
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* ===== SCROLLBARS ===== */
+QScrollBar:vertical {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.1),
+        stop:1 rgba(102, 126, 234, 0.1)
+    );
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(240, 147, 251, 0.8)
+    );
+    border-radius: 6px;
+    min-height: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 1.0),
+        stop:1 rgba(240, 147, 251, 1.0)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+QScrollBar:horizontal {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(255, 255, 255, 0.1),
+        stop:1 rgba(102, 126, 234, 0.1)
+    );
+    height: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(240, 147, 251, 0.8)
+    );
+    border-radius: 6px;
+    min-width: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 1.0),
+        stop:1 rgba(240, 147, 251, 1.0)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* ===== CUSTOM SCROLL ARROWS ===== */
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
+/* ===== HOVER ANIMATIONS ===== */
+QPushButton {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+QFrame:hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+QLineEdit:focus,
+QTextEdit:focus {
+    transition: all 0.2s ease-in-out;
+}
+
+/* ===== ACCESSIBILITY ===== */
+QWidget:focus {
+    outline: 3px solid rgba(255, 107, 53, 0.8);
+    outline-offset: 2px;
+    border-radius: 4px;
+}

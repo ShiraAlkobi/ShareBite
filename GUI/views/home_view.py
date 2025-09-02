@@ -271,7 +271,7 @@ class SearchBar(QFrame):
         self.setFixedHeight(60)  # Made taller for better visibility
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 12, 20, 12)  # Increased margins
+        layout.setContentsMargins(20, 5, 20, 5)  # Increased margins
         layout.setSpacing(15)  # Increased spacing
         
         # Search icon and input container - made much wider
@@ -280,7 +280,7 @@ class SearchBar(QFrame):
         
         search_layout = QHBoxLayout(search_container)
         search_layout.setContentsMargins(15, 0, 15, 0)  # More padding
-        search_layout.setSpacing(10)
+        search_layout.setSpacing(5)
         
         # Search icon
         search_icon = QLabel("🔍")
@@ -292,6 +292,8 @@ class SearchBar(QFrame):
         self.search_input.setPlaceholderText("Search for recipes...")
         self.search_input.returnPressed.connect(self.perform_search)
         self.search_input.setMinimumWidth(300)  # Set minimum width
+        self.search_input.setMinimumHeight(25)  # Set minimum width
+
         
         search_layout.addWidget(search_icon)
         search_layout.addWidget(self.search_input)

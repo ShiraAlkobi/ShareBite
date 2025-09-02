@@ -6,8 +6,9 @@ from presenters.login_presenter import LoginPresenter
 from presenters.home_presenter import HomePresenter
 from presenters.profile_presenter import ProfilePresenter
 from presenters.add_recipe_presenter import AddRecipePresenter
+from presenters.recipe_details_presenter import RecipeDetailsPresenter
 from models.login_model import UserData
-
+from PySide6.QtCore import qInstallMessageHandler
 
 class MainWindow(QMainWindow):
     """
@@ -27,9 +28,17 @@ class MainWindow(QMainWindow):
         self.home_presenter = None
         self.profile_presenter = None
         self.add_recipe_presenter = None
+        self.recipe_details_presenter = None
         
         self.setup_ui()
         self.setup_authentication()
+        def qt_message_handler(mode, context, message):
+            if "Unknown property" in message:
+                return  # Ignore unknown property warnings
+            print(message)
+
+        # Add this in your MainWindow.__init__
+        qInstallMessageHandler(qt_message_handler)
     
     def setup_ui(self):
         """Setup main window UI with dynamic sizing"""
@@ -109,6 +118,7 @@ class MainWindow(QMainWindow):
         self.login_presenter.authentication_failed.connect(self.on_authentication_failed)
         
         # Show login view initially
+        # Show login view initially
         self.show_login()
     
     def show_login(self):
@@ -116,7 +126,7 @@ class MainWindow(QMainWindow):
         login_widget = self.login_presenter.get_view()
 
         try:
-            with open('GUI/themes/login_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\login_theme.qss', 'r', encoding='utf-8') as f:
                 login_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Login theme file not found")
@@ -139,6 +149,7 @@ class MainWindow(QMainWindow):
         self.access_token = access_token
         
         print(f"Authentication successful!")
+        print(f"Authentication successful!")
         print(f"   User: {user_data.username}")
         print(f"   Email: {user_data.email}")
         print(f"   Token: {access_token[:20]}...")
@@ -157,10 +168,12 @@ class MainWindow(QMainWindow):
             error_message (str): Error message
         """
         print(f"Authentication failed: {error_message}")
+        print(f"Authentication failed: {error_message}")
         # Login view will handle showing the error
     
     def show_home_view(self):
         """Initialize and show home view"""
+        print("Initializing home view...")
         print("Initializing home view...")
         
         # Create home presenter with user data and token
@@ -180,7 +193,7 @@ class MainWindow(QMainWindow):
         home_widget = self.home_presenter.get_view()
 
         try:
-            with open('GUI/themes/home_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
                 home_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Home theme file not found")
@@ -214,7 +227,7 @@ class MainWindow(QMainWindow):
         profile_widget = self.profile_presenter.get_view()
 
         try:
-            with open('GUI/themes/profile_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
                 profile_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Profile theme file not found")
@@ -232,18 +245,93 @@ class MainWindow(QMainWindow):
             self.stack.setCurrentWidget(home_widget)
             self.setWindowTitle(f"ShareBite - {self.current_user.username}")
     
+        self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
+
     def show_recipe_details(self, recipe_id: int):
         """
-        Show recipe details window (future implementation)
+        Show recipe details window in the stack
         
         Args:
             recipe_id (int): Recipe ID to display
         """
         print(f"Opening recipe details for recipe {recipe_id}")
+        
+        # Create recipe details presenter if not exists
+        if not self.recipe_details_presenter:
+            self.recipe_details_presenter = RecipeDetailsPresenter(
+                access_token=self.access_token,
+                base_url="http://127.0.0.1:8000"
+            )
+            
+            # Connect recipe details signals
+            self.recipe_details_presenter.back_to_home_requested.connect(self.show_home_from_recipe_details)
+            self.recipe_details_presenter.recipe_updated.connect(self.on_recipe_updated)
+        
+        # Load recipe details
+        self.recipe_details_presenter.load_recipe_details(recipe_id)
+        
+        # Add to stack and show
+        recipe_details_widget = self.recipe_details_presenter.get_view()
+        
+        # Apply recipe details theme
+        try:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
+                recipe_details_widget.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print("Recipe details theme file not found, trying home theme")
+            try:
+                with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+                    recipe_details_widget.setStyleSheet(f.read())
+            except FileNotFoundError:
+                print("No theme files found")
+        
+        if self.stack.indexOf(recipe_details_widget) == -1:
+            self.stack.addWidget(recipe_details_widget)
+        
+        self.stack.setCurrentWidget(recipe_details_widget)
+        
+        # Update window title
+        self.setWindowTitle(f"Recipe Details - {self.current_user.username}")
+    
+    def show_home_from_recipe_details(self):
+        """Return to home view from recipe details"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"Recipe Share - {self.current_user.username}")
+    
+    def on_recipe_updated(self, recipe_id: int):
+        """
+        Handle recipe update notification from recipe details
+        This can refresh the home feed if needed
+        """
+        print(f"Recipe {recipe_id} was updated (liked/favorited)")
+        
+        # Optionally refresh home view data
+        if self.home_presenter:
+            # You could call a refresh method on home presenter here
+            # self.home_presenter.refresh_recipe_in_feed(recipe_id)
+            pass
+        print(f"Opening recipe details for recipe {recipe_id}")
         # TODO: Implement recipe details presenter/view
         # recipe_details_presenter = RecipeDetailsPresenter(recipe_id, self.access_token)
         # recipe_details_presenter.show_view()
     
+    def show_add_recipe(self):
+        """Show add recipe window (future implementation)"""
+        print("Opening add recipe form")
+        # TODO: Implement add recipe presenter/view
+        # add_recipe_presenter = AddRecipePresenter(self.access_token)
+        # add_recipe_presenter.show_view()
+
+    
+    def show_home_from_profile(self):
+        """Return to home view from profile"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"ShareBite - {self.current_user.username}")
+
     def show_add_recipe_view(self):
         """Initialize and show add recipe view"""
         print("Initializing add recipe view...")
@@ -265,7 +353,7 @@ class MainWindow(QMainWindow):
         add_recipe_widget = self.add_recipe_presenter.get_view()
         
         try:
-            with open('GUI/themes/add_recipe_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
                 add_recipe_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Add recipe theme file not found")
@@ -310,6 +398,10 @@ class MainWindow(QMainWindow):
             self.profile_presenter.cleanup()
             self.profile_presenter = None
         
+        if self.recipe_details_presenter:
+            self.recipe_details_presenter.cleanup()
+            self.recipe_details_presenter = None
+        
         self.current_user = None
         self.access_token = None
         
@@ -335,6 +427,9 @@ class MainWindow(QMainWindow):
             self.profile_presenter.close_view()
             self.profile_presenter.cleanup()
         
+        if self.recipe_details_presenter:
+            self.recipe_details_presenter.cleanup()
+        
         event.accept()
 
 def load_theme_files(*theme_files):
@@ -352,6 +447,10 @@ def main():
     """Main application entry point"""
     app = QApplication(sys.argv)
     
+
+    with open("C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\theme.qss", "r", encoding="utf-8") as f:
+        app.setStyleSheet(f.read())
+
     # Set application properties
     app.setApplicationName("ShareBite")
     app.setApplicationVersion("1.0.0")
