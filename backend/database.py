@@ -92,7 +92,7 @@ class ConnectionPool:
         # Wait for connection to become available
         try:
             print("Waiting for available connection...")
-            return self.pool.get(timeout=30)
+            return self.pool.get(timeout=60)
         except Empty:
             raise Exception("Timeout waiting for database connection")
     

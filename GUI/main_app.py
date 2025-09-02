@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
         login_widget = self.login_presenter.get_view()
 
         try:
-            with open('GUI/themes/login_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\login_theme.qss', 'r', encoding='utf-8') as f:
                 login_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Login theme file not found")
@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
         add_recipe_widget = self.add_recipe_presenter.get_view()
         
         try:
-            with open('GUI/themes/add_recipe_theme.qss', 'r', encoding='utf-8') as f:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
                 add_recipe_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Add recipe theme file not found")
