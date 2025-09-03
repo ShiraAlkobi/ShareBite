@@ -47,3 +47,15 @@ GUI/views/__pycache__/login_window.cpython-311.pyc
 GUI/views/__pycache__/profile_window.cpython-311.pyc
 GUI/views/__pycache__/recipe_details.cpython-311.pyc
 RecipeDB/google_debug.html
+backend/__pycache__/add_recipe_routes.cpython-311.pyc
+backend/commands/__pycache__/recipes_commands.cpython-311.pyc
+backend/queries/__pycache__/recipes_queries.cpython-311.pyc
+backend/queries/__pycache__/tags_queries.cpython-311.pyc
+backend/routes/__pycache__/add_recipe_routes.cpython-311.pyc
+backend/routes/__pycache__/graph_routes.cpython-311.pyc
+GUI/models/__pycache__/add_recipe_model.cpython-311.pyc
+GUI/models/__pycache__/graphs_model.cpython-311.pyc
+GUI/presenters/__pycache__/add_recipe_presenter.cpython-311.pyc
+GUI/presenters/__pycache__/graphs_presenter.cpython-311.pyc
+GUI/views/__pycache__/add_recipe_view.cpython-311.pyc
+GUI/views/__pycache__/graphs_view.cpython-311.pyc

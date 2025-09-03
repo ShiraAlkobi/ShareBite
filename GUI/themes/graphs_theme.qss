@@ -1,0 +1,354 @@
+/* ShareBite Analytics Theme - Modern Bold Design */
+
+/* ===== MAIN WINDOW ===== */
+QWidget#GraphsView {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 #667eea,
+        stop:0.3 #764ba2,
+        stop:0.7 #f093fb,
+        stop:1 #f5576c
+    );
+    min-width: 1000px;
+    min-height: 700px;
+}
+
+QWidget#GraphsContentWidget {
+    background: transparent;
+    border: none;
+}
+
+/* ===== HEADER SECTION ===== */
+QFrame#GraphsHeaderSection {
+    background: rgba(113, 80, 223, 0.95);
+    border: none;
+    border-radius: 0px;
+    backdrop-filter: blur(20px);
+    min-height: 70px;
+    max-height: 70px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+QFrame#GraphsBrandContainer {
+    background: transparent;
+    border: none;
+}
+
+QLabel#GraphsBrandLogo {
+    font-size: 26px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: 2px;
+    background: transparent;
+}
+
+QLabel#GraphsBrandTagline {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+    background: transparent;
+}
+
+QFrame#GraphsNavContainer {
+    background: transparent;
+    border: none;
+}
+
+QPushButton#GraphsNavButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.15),
+        stop:1 rgba(255, 255, 255, 0.08)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#GraphsNavButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(255, 255, 255, 0.25),
+        stop:1 rgba(255, 255, 255, 0.15)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+QPushButton#GraphsLogoutButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(245, 87, 108, 0.9),
+        stop:1 rgba(239, 68, 68, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#GraphsLogoutButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(239, 68, 68, 1.0),
+        stop:1 rgba(220, 38, 38, 1.0)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ===== MODE SELECTION SECTION ===== */
+QFrame#GraphsModeSection {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    margin: 0px 20px;
+}
+
+QLabel#GraphsModeLabel {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2d3748;
+    background: transparent;
+}
+
+QPushButton#GraphsModeButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.1),
+        stop:1 rgba(118, 75, 162, 0.1)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    color: #667eea;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 10px;
+    min-width: 120px;
+}
+
+QPushButton#GraphsModeButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.2),
+        stop:1 rgba(118, 75, 162, 0.2)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.5);
+}
+
+QPushButton#GraphsModeButton:checked {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 #667eea,
+        stop:1 #764ba2
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+/* ===== STATISTICS SECTION ===== */
+QFrame#GraphsStatsSection {
+    background: transparent;
+    border: none;
+    margin: 10px 20px;
+}
+
+QFrame#GraphsStatContainer {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(255, 255, 255, 0.95),
+        stop:1 rgba(247, 250, 252, 0.95)
+    );
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 15px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    min-height: 120px;
+    max-width: 200px;
+}
+
+QFrame#GraphsStatContainer:hover {
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 white,
+        stop:1 rgba(247, 250, 252, 1.0)
+    );
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+QLabel#GraphsStatIcon {
+    font-size: 24px;
+    color: #667eea;
+    background: transparent;
+}
+
+QLabel#GraphsStatValue {
+    font-size: 20px;
+    font-weight: 900;
+    color: #2d3748;
+    background: transparent;
+}
+
+QLabel#GraphsStatLabel {
+    font-size: 12px;
+    color: #718096;
+    background: transparent;
+    font-weight: 600;
+}
+
+/* ===== CHARTS CONTAINER ===== */
+QFrame#GraphsChartsContainer {
+    background: transparent;
+    border: none;
+}
+
+QFrame#GraphsChartContainer {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 20px;
+    backdrop-filter: blur(30px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+QFrame#GraphsChartContainer:hover {
+    border: 2px solid rgba(102, 126, 234, 0.4);
+    background: white;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+}
+
+QLabel#GraphsChartTitle {
+    font-size: 18px;
+    font-weight: 800;
+    color: #2d3748;
+    background: transparent;
+    margin-bottom: 10px;
+}
+
+QLabel#GraphsChartPlaceholder {
+    font-size: 16px;
+    color: #a0aec0;
+    background: transparent;
+    border: 2px dashed rgba(160, 174, 192, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+}
+
+/* ===== MESSAGE LABEL ===== */
+QLabel#GraphsMessageLabel {
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 10px 20px;
+}
+
+QLabel#GraphsMessageLabel[error="false"] {
+    background: rgba(16, 185, 129, 0.9);
+    color: white;
+}
+
+/* ===== LOADING INDICATOR ===== */
+QFrame#GraphsLoadingIndicator {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(102, 126, 234, 0.9),
+        stop:1 rgba(240, 147, 251, 0.9)
+    );
+    border-radius: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    min-width: 200px;
+    max-width: 200px;
+    min-height: 80px;
+    max-height: 80px;
+}
+
+QLabel#GraphsLoadingLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    background: transparent;
+}
+
+/* ===== CHART STYLING ===== */
+QChartView {
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+QScrollBar:vertical {
+    background: rgba(255, 255, 255, 0.1);
+    width: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.6),
+        stop:1 rgba(118, 75, 162, 0.6)
+    );
+    border-radius: 4px;
+    min-width: 20px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:0, y2:1,
+        stop:0 rgba(102, 126, 234, 0.8),
+        stop:1 rgba(118, 75, 162, 0.8)
+    );
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* ===== HOVER ANIMATIONS ===== */
+QPushButton {
+    transition: all 0.3s ease;
+}

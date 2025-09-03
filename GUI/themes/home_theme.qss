@@ -623,3 +623,28 @@ QWidget:focus {
         font-weight: 700;
     }
 }
+
+/* ===== ANALYTICS BUTTON STYLING ===== */
+QPushButton#AnalyticsButton {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(139, 92, 246, 0.9),
+        stop:1 rgba(124, 58, 237, 0.9)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    min-width: 80px;
+}
+
+QPushButton#AnalyticsButton:hover {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:0,
+        stop:0 rgba(139, 92, 246, 1.0),
+        stop:1 rgba(124, 58, 237, 1.0)
+    );
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}

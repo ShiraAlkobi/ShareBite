@@ -58,6 +58,7 @@ class RecipeCard(QFrame):
     recipe_clicked = Signal(int)  # recipe_id
     recipe_liked = Signal(int)  # recipe_id
     recipe_favorited = Signal(int)  # recipe_id
+    analytics_requested = Signal()
     
     def __init__(self, recipe: RecipeData, parent=None):
         super().__init__(parent)
@@ -336,6 +337,7 @@ class HomeView(QWidget):
     refresh_requested = Signal()
     add_recipe_requested = Signal()
     user_profile_requested = Signal()
+    analytics_requested = Signal()
     logout_requested = Signal()
     
     recipe_clicked = Signal(int)
@@ -447,6 +449,11 @@ class HomeView(QWidget):
         add_button.setObjectName("AddRecipeButton")
         add_button.clicked.connect(self.add_recipe_requested.emit)
         
+        # Analytics button - NEW
+        analytics_button = QPushButton("Analytics")
+        analytics_button.setObjectName("AnalyticsButton")
+        analytics_button.clicked.connect(self.analytics_requested.emit)
+        
         # Profile button
         profile_button = QPushButton("Profile")
         profile_button.setObjectName("ProfileButton")
@@ -458,6 +465,7 @@ class HomeView(QWidget):
         logout_button.clicked.connect(self.logout_requested.emit)
         
         nav_container.addWidget(add_button)
+        nav_container.addWidget(analytics_button)  # Add the new analytics button
         nav_container.addWidget(profile_button)
         nav_container.addWidget(logout_button)
         
@@ -466,7 +474,7 @@ class HomeView(QWidget):
         header_layout.addLayout(nav_container)
         
         main_layout.addWidget(header)
-    
+
     def setup_recipes_section(self, content_layout):
         """Setup compact scrollable recipes section"""
         # Section header
