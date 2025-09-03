@@ -7,6 +7,7 @@ from presenters.home_presenter import HomePresenter
 from presenters.profile_presenter import ProfilePresenter
 from presenters.add_recipe_presenter import AddRecipePresenter
 from presenters.recipe_details_presenter import RecipeDetailsPresenter
+from presenters.graphs_presenter import GraphsPresenter
 from models.login_model import UserData
 from PySide6.QtCore import qInstallMessageHandler
 
@@ -29,6 +30,7 @@ class MainWindow(QMainWindow):
         self.profile_presenter = None
         self.add_recipe_presenter = None
         self.recipe_details_presenter = None
+        self.graphs_presenter = None  
         
         self.setup_ui()
         self.setup_authentication()
@@ -55,6 +57,7 @@ class MainWindow(QMainWindow):
         
         self.show()
     
+    # Update adjust_window_size method to handle analytics view
     def adjust_window_size(self):
         """Adjust window size based on current widget"""
         current_widget = self.stack.currentWidget()
@@ -90,6 +93,13 @@ class MainWindow(QMainWindow):
                     self.setMaximumSize(1000, 800)
                     self.resize(900, 700)
                 
+                # Add this case for analytics view
+                elif widget_name == "GraphsView":
+                    # Analytics view sizing - larger for charts
+                    self.setMinimumSize(1000, 700)
+                    self.setMaximumSize(1400, 900)
+                    self.resize(1200, 800)
+                
                 else:
                     # Default sizing for unknown widgets
                     self.setMinimumSize(700, 500)
@@ -97,7 +107,7 @@ class MainWindow(QMainWindow):
             
             # Center the window on screen after resize
             self.center_on_screen()
-    
+
     def center_on_screen(self):
         """Center the window on the screen"""
         screen = QApplication.primaryScreen()
@@ -188,6 +198,7 @@ class MainWindow(QMainWindow):
         self.home_presenter.add_recipe_requested.connect(self.show_add_recipe_view)
         self.home_presenter.user_profile_requested.connect(self.show_profile_view)
         self.home_presenter.logout_requested.connect(self.handle_logout)
+        self.home_presenter.analytics_requested.connect(self.show_analytics_view)
         
         # Show home view
         home_widget = self.home_presenter.get_view()
@@ -348,6 +359,7 @@ class MainWindow(QMainWindow):
             self.add_recipe_presenter.home_requested.connect(self.show_home_from_add_recipe)
             self.add_recipe_presenter.logout_requested.connect(self.handle_logout)
             self.add_recipe_presenter.recipe_created.connect(self.on_recipe_created)
+            
         
         # Add to stack and show
         add_recipe_widget = self.add_recipe_presenter.get_view()
@@ -401,7 +413,12 @@ class MainWindow(QMainWindow):
         if self.recipe_details_presenter:
             self.recipe_details_presenter.cleanup()
             self.recipe_details_presenter = None
-        
+            
+        if self.graphs_presenter:
+            self.graphs_presenter.close_view()
+            self.graphs_presenter.cleanup()
+            self.graphs_presenter = None
+
         self.current_user = None
         self.access_token = None
         
@@ -432,16 +449,54 @@ class MainWindow(QMainWindow):
         
         event.accept()
 
-def load_theme_files(*theme_files):
-    combined_styles = ""
-    for file_path in theme_files:
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                combined_styles += f.read() + "\n"
-        except FileNotFoundError:
-            print(f"Theme file not found: {file_path}")
-    return combined_styles
+    def load_theme_files(*theme_files):
+        combined_styles = ""
+        for file_path in theme_files:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    combined_styles += f.read() + "\n"
+            except FileNotFoundError:
+                print(f"Theme file not found: {file_path}")
+        return combined_styles
 
+    # Add this method to MainWindow class
+    def show_analytics_view(self):
+        """Initialize and show analytics view"""
+        print("Initializing analytics view...")
+        
+        if not self.graphs_presenter:
+            # Create analytics presenter
+            self.graphs_presenter = GraphsPresenter(
+                user_data=self.current_user,
+                access_token=self.access_token,
+                base_url="http://127.0.0.1:8000"
+            )
+            
+            # Connect analytics signals
+            self.graphs_presenter.home_requested.connect(self.show_home_from_analytics)
+            self.graphs_presenter.logout_requested.connect(self.handle_logout)
+        
+        # Add to stack and show
+        analytics_widget = self.graphs_presenter.get_view()
+        
+        try:
+            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\graphs_theme.qss', 'r', encoding='utf-8') as f:
+                analytics_widget.setStyleSheet(f.read())
+        except FileNotFoundError:
+            print("Analytics theme file not found")
+        
+        if self.stack.indexOf(analytics_widget) == -1:
+            self.stack.addWidget(analytics_widget)
+        
+        self.stack.setCurrentWidget(analytics_widget)
+        self.setWindowTitle(f"Analytics - {self.current_user.username}")
+
+    def show_home_from_analytics(self):
+        """Return to home view from analytics"""
+        if self.home_presenter:
+            home_widget = self.home_presenter.get_view()
+            self.stack.setCurrentWidget(home_widget)
+            self.setWindowTitle(f"ShareBite - {self.current_user.username}")
 
 def main():
     """Main application entry point"""
@@ -465,6 +520,7 @@ def main():
     
     # Handle application exit
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

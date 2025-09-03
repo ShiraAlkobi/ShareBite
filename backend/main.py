@@ -11,6 +11,7 @@ from routes.recipe_routes import router as recipe_router
 from routes.user_routes import router as profile_router
 from routes.add_recipe_routes import router as add_recipe_router
 from routes.chat_routes import router as chat_router
+from routes.graph_routes import router as analytics_router
 
 # Import other routers when you create them
 # from routers import recipes, users, tags
@@ -195,6 +196,12 @@ app.include_router(
     chat_router,
     prefix="/api/v1",
     tags=["Chat"]
+)
+
+app.include_router(
+    analytics_router,
+    prefix="/api/v1",
+    tags=["Analytics"]
 )
 
 if __name__ == "__main__":

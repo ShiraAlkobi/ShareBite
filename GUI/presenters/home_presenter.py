@@ -14,6 +14,7 @@ class HomePresenter(QObject):
     recipe_details_requested = Signal(int)  # recipe_id
     add_recipe_requested = Signal()
     user_profile_requested = Signal()
+    analytics_requested = Signal()
     logout_requested = Signal()
     
     def __init__(self, user_data: UserData, access_token: str, base_url: str = "http://127.0.0.1:8000", parent=None):
@@ -55,6 +56,7 @@ class HomePresenter(QObject):
         self.view.refresh_requested.connect(self.handle_refresh_request)
         self.view.add_recipe_requested.connect(self.add_recipe_requested.emit)
         self.view.user_profile_requested.connect(self.user_profile_requested.emit)
+        self.view.analytics_requested.connect(self.analytics_requested.emit)  # Add this line
         self.view.logout_requested.connect(self.logout_requested.emit)
         
         # Recipe interaction signals
