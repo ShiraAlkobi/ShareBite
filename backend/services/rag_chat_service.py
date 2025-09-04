@@ -13,47 +13,6 @@ class RAGChatService:
         self.ollama_client = OllamaClient()
         self.conversation_history = {}  # user_id -> conversation list
     
-    def process_chat_message(self, user_id: int, user_message: str) -> Dict[str, Any]:
-        """
-        Main processing pipeline with context awareness
-        """
-        try:
-            print(f"Processing chat from user {user_id}: {user_message}")
-            
-            # Step 1: Enhance query with conversation context
-            enhanced_query = self._enhance_query_with_context(user_id, user_message)
-            print(f"Enhanced query: {enhanced_query}")
-            
-            # Step 2: Analyze intent
-            intent = self.recipe_search.analyze_query_intent(enhanced_query)
-            
-            # Step 3: Smart recipe search
-            relevant_recipes = self._smart_recipe_search(intent, enhanced_query)
-            print(f"Found {len(relevant_recipes)} relevant recipes")
-            
-            # Step 4: Generate contextual AI response
-            ai_response = self._generate_contextual_response(
-                user_id, user_message, relevant_recipes
-            )
-            
-            # Step 5: Store conversation
-            self._update_conversation_history(user_id, user_message, ai_response)
-            
-            return {
-                "success": True,
-                "response": ai_response,
-                "relevant_recipes_count": len(relevant_recipes),
-                "recipe_ids": [r.get('RecipeID') for r in relevant_recipes],
-                "search_intent": intent['type']
-            }
-            
-        except Exception as e:
-            print(f"Error processing chat: {e}")
-            return {
-                "success": False,
-                "response": "I'm having trouble right now. Please try rephrasing your question.",
-                "error": str(e)
-            }
     
     def _enhance_query_with_context(self, user_id: int, current_message: str) -> str:
         """
@@ -81,51 +40,8 @@ class RAGChatService:
         
         return current_message
     
-    def _extract_food_context(self, text: str) -> List[str]:
-        """Extract food-related terms from text"""
-        food_keywords = [
-            'mashed potatoes', 'chicken', 'pasta', 'beef', 'fish', 'rice', 
-            'eggs', 'bread', 'soup', 'salad', 'cake', 'cookies', 'pizza',
-            'breakfast', 'lunch', 'dinner', 'dessert', 'potatoes', 'vegetables'
-        ]
-        
-        found_terms = []
-        text_lower = text.lower()
-        
-        for keyword in food_keywords:
-            if keyword in text_lower:
-                found_terms.append(keyword)
-        
-        return found_terms[:2]  # Return max 2 most relevant
     
-    def _smart_recipe_search(self, intent: Dict[str, Any], query: str) -> List[Dict[str, Any]]:
-        """
-        Intelligent recipe search with cascading fallbacks
-        """
-        # Strategy 1: Exact match search (highest priority)
-        if intent['type'] == 'general':
-            recipes = self.recipe_search.search_recipes_by_exact_match(query, limit=2)
-            if recipes:
-                return recipes
-        
-        # Strategy 2: Category search
-        if intent['type'] == 'category' and intent['category']:
-            recipes = self.recipe_search.search_recipes_by_category(intent['category'], limit=2)
-            if recipes:
-                return recipes
-        
-        # Strategy 3: Popular recipes for vague queries
-        if intent['specific_request'] == 'popular':
-            return self.recipe_search.get_popular_recipes(limit=2)
-        
-        # Strategy 4: Fallback keyword search
-        recipes = self.recipe_search.search_recipes_by_keywords(query, limit=2)
-        if recipes:
-            return recipes
-        
-        # Strategy 5: Last resort - popular recipes
-        return self.recipe_search.get_popular_recipes(limit=2)
-    
+
     def _generate_contextual_response(self, user_id: int, user_message: str, recipes: List[Dict]) -> str:
         """
         Generate AI response with conversation context

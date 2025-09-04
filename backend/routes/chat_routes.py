@@ -3,6 +3,8 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from auth_routes import verify_token
 from services.rag_chat_service import RAGChatService
+import requests
+import json
 
 router = APIRouter(prefix="/chat", tags=["AI Chat"])
 
@@ -23,52 +25,52 @@ class ChatResponse(BaseModel):
 class ConversationHistoryResponse(BaseModel):
     history: List[Dict[str, Any]]
 
-@router.post("", response_model=ChatResponse)
-async def chat_with_ai(
-    chat_message: ChatMessage,
-    current_user: dict = Depends(verify_token)
-):
-    """
-    Chat with AI using RAG - searches recipes and generates AI response
-    """
-    try:
-        user_id = current_user['userid']
-        username = current_user['username']
+# @router.post("", response_model=ChatResponse)
+# async def chat_with_ai(
+#     chat_message: ChatMessage,
+#     current_user: dict = Depends(verify_token)
+# ):
+#     """
+#     Chat with AI using RAG - searches recipes and generates AI response
+#     """
+#     try:
+#         user_id = current_user['userid']
+#         username = current_user['username']
         
-        print(f"Chat request from {username} (ID: {user_id}): {chat_message.message}")
+#         print(f"Chat request from {username} (ID: {user_id}): {chat_message.message}")
         
-        # Validate message
-        if not chat_message.message or not chat_message.message.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Message cannot be empty"
-            )
+#         # Validate message
+#         if not chat_message.message or not chat_message.message.strip():
+#             raise HTTPException(
+#                 status_code=status.HTTP_400_BAD_REQUEST,
+#                 detail="Message cannot be empty"
+#             )
         
-        # Process chat message using RAG
-        result = rag_service.process_chat_message(user_id, chat_message.message.strip())
+#         # Process chat message using RAG
+#         result = rag_service.process_chat_message(user_id, chat_message.message.strip())
         
-        if not result["success"]:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=result.get("error", "Failed to process chat message")
-            )
+#         if not result["success"]:
+#             raise HTTPException(
+#                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 detail=result.get("error", "Failed to process chat message")
+#             )
         
-        return ChatResponse(
-            response=result["response"],
-            relevant_recipes_count=result["relevant_recipes_count"],
-            recipe_ids=result["recipe_ids"],
-            search_intent=result["search_intent"],
-            success=True
-        )
+#         return ChatResponse(
+#             response=result["response"],
+#             relevant_recipes_count=result["relevant_recipes_count"],
+#             recipe_ids=result["recipe_ids"],
+#             search_intent=result["search_intent"],
+#             success=True
+#         )
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error in chat endpoint: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error occurred"
-        )
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         print(f"Error in chat endpoint: {e}")
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail="Internal server error occurred"
+#         )
 
 @router.get("/history", response_model=ConversationHistoryResponse)
 async def get_chat_history(
@@ -134,16 +136,7 @@ async def get_chat_service_status():
             "message": f"Service error: {str(e)}"
         }
     
-# Add this to your existing chat_routes.py or create a new endpoint in recipe_routes.py
 
-# Add this to your existing chat_routes.py or create a new endpoint in recipe_routes.py
-
-from fastapi import APIRouter, HTTPException, Depends, status
-from pydantic import BaseModel
-from typing import Dict, Any
-from routes.auth_routes import verify_token
-import requests
-import json
 
 # Add this to your existing router
 class RecipeContextChatRequest(BaseModel):
@@ -180,13 +173,13 @@ async def recipe_context_chat(
                 "repeat_penalty": 1.1,
                 "stop": ["\n\n", "User:", "###"]
             },
-            "keep_alive": "5m"  # Keep model loaded
+            "keep_alive": "15m"  # Keep model loaded
         }
         
         ollama_response = requests.post(
             "http://localhost:11434/api/generate",
             json=ollama_payload,
-            timeout=60  # REDUCED timeout
+            timeout=120  # REDUCED timeout
         )
         
         if ollama_response.status_code == 200:
@@ -208,23 +201,23 @@ def create_optimized_recipe_prompt(message: str, recipe: Dict) -> str:
     
     return f"Recipe: {title}\nIngredients: {ingredients}\nQ: {message}\nA:"
 
-def create_recipe_focused_prompt(user_message: str, recipe_context: Dict[str, Any]) -> str:
-    """Create a very concise prompt for fast responses"""
+# def create_recipe_focused_prompt(user_message: str, recipe_context: Dict[str, Any]) -> str:
+#     """Create a very concise prompt for fast responses"""
     
-    # Extract only essential recipe data
-    title = recipe_context.get('title', 'Unknown Recipe')
-    ingredients = recipe_context.get('ingredients', 'No ingredients')[:200]  # Limit length
-    instructions = recipe_context.get('instructions', 'No instructions')[:300]  # Limit length
+#     # Extract only essential recipe data
+#     title = recipe_context.get('title', 'Unknown Recipe')
+#     ingredients = recipe_context.get('ingredients', 'No ingredients')[:200]  # Limit length
+#     instructions = recipe_context.get('instructions', 'No instructions')[:300]  # Limit length
     
-    # Create ultra-concise prompt for speed
-    prompt = f"""Recipe: {title}
+#     # Create ultra-concise prompt for speed
+#     prompt = f"""Recipe: {title}
 
-Ingredients: {ingredients}
+# Ingredients: {ingredients}
 
-Instructions: {instructions}
+# Instructions: {instructions}
 
-Question: {user_message}
+# Question: {user_message}
 
-Answer briefly and directly:"""
+# Answer briefly and directly:"""
     
-    return prompt
+#     return prompt

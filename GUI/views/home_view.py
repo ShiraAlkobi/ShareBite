@@ -15,7 +15,6 @@ class RecipeCard(QFrame):
     recipe_clicked = Signal(int)  # recipe_id
     recipe_liked = Signal(int)  # recipe_id
     recipe_favorited = Signal(int)  # recipe_id
-    analytics_requested = Signal()
     
     def __init__(self, recipe: RecipeData, parent=None):
         super().__init__(parent)
@@ -153,32 +152,31 @@ class SearchBar(QFrame):
     
     def setup_ui(self):
         """Setup search bar UI components"""
-        self.setFixedHeight(60)  # Made taller for better visibility
+        self.setFixedHeight(60)
         
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(20, 5, 20, 5)  # Increased margins
-        layout.setSpacing(15)  # Increased spacing
+        layout.setContentsMargins(20, 5, 20, 5)
+        layout.setSpacing(15)
         
-        # Search icon and input container - made much wider
+        # Search icon and input container
         search_container = QFrame()
         search_container.setObjectName("SearchContainer")
         
         search_layout = QHBoxLayout(search_container)
-        search_layout.setContentsMargins(15, 0, 15, 0)  # More padding
+        search_layout.setContentsMargins(15, 0, 15, 0)
         search_layout.setSpacing(5)
         
         # Search icon
         search_icon = QLabel("🔍")
         search_icon.setObjectName("SearchIcon")
         
-        # Search input - wider
+        # Search input
         self.search_input = QLineEdit()
         self.search_input.setObjectName("SearchInput")
         self.search_input.setPlaceholderText("Search for recipes...")
         self.search_input.returnPressed.connect(self.perform_search)
-        self.search_input.setMinimumWidth(300)  # Set minimum width
-        self.search_input.setMinimumHeight(25)  # Set minimum width
-
+        self.search_input.setMinimumWidth(300)
+        self.search_input.setMinimumHeight(25)
         
         search_layout.addWidget(search_icon)
         search_layout.addWidget(self.search_input)
@@ -187,15 +185,15 @@ class SearchBar(QFrame):
         self.filter_combo = QComboBox()
         self.filter_combo.setObjectName("FilterCombo")
         self.filter_combo.addItems(["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snacks"])
-        self.filter_combo.setMinimumWidth(100)  # Set minimum width
+        self.filter_combo.setMinimumWidth(100)
         
         # Search button
         search_button = QPushButton("Search")
         search_button.setObjectName("SearchButton")
         search_button.clicked.connect(self.perform_search)
-        search_button.setMinimumWidth(80)  # Set minimum width
+        search_button.setMinimumWidth(80)
         
-        layout.addWidget(search_container, 1)  # Give search container more space
+        layout.addWidget(search_container, 1)
         layout.addWidget(self.filter_combo)
         layout.addWidget(search_button)
     
@@ -290,9 +288,6 @@ class HomeView(QWidget):
         
         # Set the content widget to scroll area
         scroll_area.setWidget(content_widget)
-        
-        # Loading overlay
-        self.setup_loading_overlay()
     
     def setup_header_section(self, main_layout):
         """Setup modern compact header with branding and navigation"""
@@ -333,7 +328,7 @@ class HomeView(QWidget):
         add_button.setObjectName("AddRecipeButton")
         add_button.clicked.connect(self.add_recipe_requested.emit)
         
-        # Analytics button - NEW
+        # Analytics button
         analytics_button = QPushButton("Analytics")
         analytics_button.setObjectName("AnalyticsButton")
         analytics_button.clicked.connect(self.analytics_requested.emit)
@@ -349,7 +344,7 @@ class HomeView(QWidget):
         logout_button.clicked.connect(self.logout_requested.emit)
         
         nav_container.addWidget(add_button)
-        nav_container.addWidget(analytics_button)  # Add the new analytics button
+        nav_container.addWidget(analytics_button)
         nav_container.addWidget(profile_button)
         nav_container.addWidget(logout_button)
         
@@ -382,7 +377,7 @@ class HomeView(QWidget):
         
         content_layout.addWidget(recipes_header)
         
-        # Recipe grid container (no additional scroll area needed)
+        # Recipe grid container
         self.recipe_container = QWidget()
         self.recipe_container.setObjectName("RecipeContainer")
         
@@ -392,33 +387,87 @@ class HomeView(QWidget):
         
         content_layout.addWidget(self.recipe_container)
     
-    def setup_loading_overlay(self):
-        """Setup compact loading indicator"""
-        self.loading_indicator = QFrame(self)
-        self.loading_indicator.setObjectName("LoadingIndicator")
-        self.loading_indicator.setFixedSize(60, 60)
-        
-        indicator_layout = QVBoxLayout(self.loading_indicator)
-        indicator_layout.setAlignment(Qt.AlignCenter)
-        indicator_layout.setContentsMargins(0, 0, 0, 0)
-        
-        loading_icon = QLabel("🍳")
-        loading_icon.setObjectName("LoadingIcon")
-        loading_icon.setAlignment(Qt.AlignCenter)
-        
-        indicator_layout.addWidget(loading_icon)
-        
-        self.loading_indicator.hide()
-        
-        # Create animation timer for spinning effect
-        self.loading_timer = QTimer()
-        self.loading_timer.timeout.connect(self.animate_loading)
-        self.loading_icons = ["🍳", "👨‍🍳", "🥘", "🍽️"]
-        self.loading_index = 0
-    
     def setup_connections(self):
         """Setup signal connections"""
         self.search_bar.search_requested.connect(self.search_requested.emit)
+    
+    def set_loading_state(self, loading: bool, message: str = "Loading..."):
+        """Set loading state with overlay - prevents black window"""
+        print(f"DEBUG: Setting loading state: {loading} - {message}")
+        
+        if loading:
+            # Disable all interactions but keep window responsive
+            self.setEnabled(False)
+            print("DEBUG: Window disabled, creating overlay")
+            
+            # Show loading overlay
+            if not hasattr(self, 'loading_overlay'):
+                self.create_loading_overlay()
+                print("DEBUG: Created new loading overlay")
+            
+            self.loading_label.setText(message)
+            self.loading_overlay.show()
+            self.loading_overlay.raise_()
+            print("DEBUG: Overlay shown and raised")
+        else:
+            # Re-enable interactions
+            self.setEnabled(True)
+            print("DEBUG: Window re-enabled")
+            if hasattr(self, 'loading_overlay'):
+                self.loading_overlay.hide()
+                print("DEBUG: Overlay hidden")
+
+    def create_loading_overlay(self):
+        """Create semi-transparent loading overlay"""
+        self.loading_overlay = QFrame(self)
+        self.loading_overlay.setStyleSheet("""
+            QFrame {
+                background-color: rgba(0, 0, 0, 0.6);
+                border-radius: 15px;
+            }
+        """)
+        
+        layout = QVBoxLayout(self.loading_overlay)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        # Spinner
+        spinner = QLabel("🔄")
+        spinner.setAlignment(Qt.AlignCenter)
+        spinner.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 32px;
+                background: transparent;
+                padding: 20px;
+            }
+        """)
+        
+        # Loading text
+        self.loading_label = QLabel("Loading...")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                font-size: 18px;
+                font-weight: 600;
+                background: transparent;
+                padding: 10px;
+            }
+        """)
+        
+        layout.addWidget(spinner)
+        layout.addWidget(self.loading_label)
+        
+        # Create timer for spinner animation
+        self.spinner_timer = QTimer()
+        self.spinner_timer.timeout.connect(lambda: self.animate_spinner(spinner))
+        self.spinner_angles = 0
+    
+    def animate_spinner(self, spinner_label):
+        """Simple spinner animation"""
+        spinners = ["🔄", "🔃", "🔄", "🔃"]
+        self.spinner_angles = (self.spinner_angles + 1) % len(spinners)
+        spinner_label.setText(spinners[self.spinner_angles])
     
     def display_recipes(self, recipes: List[RecipeData]):
         """Display recipe cards in compact grid layout"""
@@ -450,14 +499,6 @@ class HomeView(QWidget):
         """Display search results with query context"""
         self.display_recipes(recipes)
         self.content_title.setText(f"'{query}' ({len(recipes)})")
-    
-    def animate_loading(self):
-        """Animate the loading indicator"""
-        if hasattr(self, 'loading_indicator') and self.loading_indicator.isVisible():
-            loading_icon = self.loading_indicator.findChild(QLabel, "LoadingIcon")
-            if loading_icon:
-                self.loading_index = (self.loading_index + 1) % len(self.loading_icons)
-                loading_icon.setText(self.loading_icons[self.loading_index])
     
     def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for specific recipe card with optional likes count"""
@@ -512,23 +553,6 @@ class HomeView(QWidget):
         
         self.recipe_layout.addWidget(empty_container, 0, 0, 1, 3)  # Span across 3 columns
     
-    def set_loading_state(self, loading: bool):
-        """Set loading state with animation"""
-        if loading:
-            self.loading_indicator.show()
-            self.loading_indicator.raise_()
-            self.loading_timer.start(500)  # Change icon every 500ms
-            
-            # Center the loading indicator
-            parent_rect = self.rect()
-            indicator_rect = self.loading_indicator.rect()
-            x = (parent_rect.width() - indicator_rect.width()) // 2
-            y = (parent_rect.height() - indicator_rect.height()) // 2
-            self.loading_indicator.move(x, y)
-        else:
-            self.loading_indicator.hide()
-            self.loading_timer.stop()
-    
     def show_error_message(self, message: str):
         """Show error message to user"""
         self.show_temporary_message(message, 5000, True)
@@ -538,9 +562,7 @@ class HomeView(QWidget):
         self.show_temporary_message(message, 3000, False)
     
     def show_temporary_message(self, message: str, duration: int = 3000, is_error: bool = False):
-        """
-        Show a temporary message to the user (toast-style notification)
-        """
+        """Show a temporary message to the user (toast-style notification)"""
         try:
             # Create temporary message label if it doesn't exist
             if not hasattr(self, 'temp_message_label'):
@@ -591,8 +613,15 @@ class HomeView(QWidget):
     def resizeEvent(self, event):
         """Handle window resize to position loading overlay"""
         super().resizeEvent(event)
-        if hasattr(self, 'loading_indicator') and self.loading_indicator.isVisible():
-            # Center loading indicator
-            x = (self.width() - self.loading_indicator.width()) // 2
-            y = (self.height() - self.loading_indicator.height()) // 2
-            self.loading_indicator.move(x, y)
+        
+        # Position loading overlay to cover the entire window
+        if hasattr(self, 'loading_overlay'):
+            self.loading_overlay.resize(self.size())
+            self.loading_overlay.move(0, 0)
+        
+        # Start spinner animation when overlay is visible
+        if hasattr(self, 'loading_overlay') and self.loading_overlay.isVisible():
+            if hasattr(self, 'spinner_timer') and not self.spinner_timer.isActive():
+                self.spinner_timer.start(200)  # Animate every 200ms
+        elif hasattr(self, 'spinner_timer'):
+            self.spinner_timer.stop()

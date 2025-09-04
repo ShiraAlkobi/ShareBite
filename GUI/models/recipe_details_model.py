@@ -31,7 +31,7 @@ class RecipeDetailsModel(QObject):
         
         # Current recipe data
         self.current_recipe = None
-        self.timeout = 30
+        self.timeout = 120
         self.ollama_timeout = 120  # Longer timeout for AI responses
     
     def load_recipe_details(self, recipe_id: int):
@@ -109,7 +109,7 @@ class RecipeDetailsModel(QObject):
             response = self.session.post(
                 f"{self.base_url}/api/v1/chat/recipe-chat",
                 json=chat_payload,
-                timeout=45  # REDUCED from 90
+                timeout=120  # REDUCED from 90
             )
             
             if response.status_code == 200:

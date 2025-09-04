@@ -50,7 +50,7 @@ class OllamaClient:
             }
             
             # Add keep_alive to prevent model unloading
-            payload["keep_alive"] = "5m"
+            payload["keep_alive"] = "15m"
             
             response = requests.post(
                 f"{self.base_url}/api/generate",

@@ -59,3 +59,12 @@ GUI/presenters/__pycache__/add_recipe_presenter.cpython-311.pyc
 GUI/presenters/__pycache__/graphs_presenter.cpython-311.pyc
 GUI/views/__pycache__/add_recipe_view.cpython-311.pyc
 GUI/views/__pycache__/graphs_view.cpython-311.pyc
+backend/__pycache__/gateway.cpython-311.pyc
+filetree.txt
+GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
+GUI/presenters/__pycache__/recipe_details_presenter.cpython-311.pyc
+GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
+GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
+GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
+GUI/views/__pycache__/recipe_details_view.cpython-311.pyc
+GUI/models/__pycache__/recipe_details_model.cpython-311.pyc

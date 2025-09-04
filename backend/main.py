@@ -205,22 +205,18 @@ app.include_router(
 )
 
 if __name__ == "__main__":
-    """
-    Run the server directly for development
-    Production deployment should use a proper ASGI server
-    """
+    
     print("🔧 Running in development mode...")
-    print("🌐 Server will be available at: http://127.0.0.1:8000")
-    print("📚 API Documentation: http://127.0.0.1:8000/docs")
-    print("📋 Alternative Docs: http://127.0.0.1:8000/redoc")
-    print("💗 Health Check: http://127.0.0.1:8000/health")
-    print("🔐 Authentication: http://127.0.0.1:8000/api/v1/auth/")
+    print("🌐 Server will be available at: http://127.0.0.1:8001")  # Changed from 8000
+    print("📚 API Documentation: http://127.0.0.1:8001/docs")       # Changed from 8000
+    print("📋 Alternative Docs: http://127.0.0.1:8001/redoc")       # Changed from 8000
+    print("💗 Health Check: http://127.0.0.1:8001/health")          # Changed from 8000
+    print("🔐 Authentication: http://127.0.0.1:8001/api/v1/auth/")  # Changed from 8000
     
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
-        port=8000,
-        reload=True,  # Auto-reload on code changes
+        port=8001,  # Changed from 8000 to 8001
+        reload=True,
         log_level="info"
     )
-
