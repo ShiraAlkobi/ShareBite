@@ -1,7 +1,7 @@
 from .base_model import BaseModel
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id
 import hashlib
-from typing import List
+from typing import List, Dict, Any
 from .recipe import Recipe
 
 class Favorite(BaseModel):
@@ -48,7 +48,7 @@ class Favorite(BaseModel):
             return rows_affected > 0
             
         except Exception as e:
-            print(f"❌ Error adding favorite: {e}")
+            print(f"Error adding favorite: {e}")
             return False
     
     @classmethod
@@ -72,7 +72,7 @@ class Favorite(BaseModel):
             return rows_affected > 0
             
         except Exception as e:
-            print(f"❌ Error removing favorite: {e}")
+            print(f"Error removing favorite: {e}")
             return False
     
     @classmethod
@@ -96,7 +96,7 @@ class Favorite(BaseModel):
             return count > 0
             
         except Exception as e:
-            print(f"❌ Error checking favorite status: {e}")
+            print(f"Error checking favorite status: {e}")
             return False
     
     @classmethod
@@ -131,5 +131,83 @@ class Favorite(BaseModel):
             return recipes
             
         except Exception as e:
-            print(f"❌ Error getting user favorites: {e}")
+            print(f"Error getting user favorites: {e}")
             return []
+    
+    # ============= NEW METHODS FROM USER_ROUTES =============
+    
+    @classmethod
+    def toggle_favorite(cls, user_id: int, recipe_id: int) -> Dict[str, Any]:
+        """
+        Toggle favorite status on a recipe
+        
+        Args:
+            user_id (int): User ID
+            recipe_id (int): Recipe ID
+            
+        Returns:
+            Dict: Result with favorite status and total count
+        """
+        try:
+            # Check current favorite status
+            is_favorited = execute_scalar(
+                "SELECT COUNT(*) FROM Favorites WHERE UserID = ? AND RecipeID = ?",
+                (user_id, recipe_id)
+            ) > 0
+            
+            if is_favorited:
+                # Remove favorite
+                execute_non_query(
+                    "DELETE FROM Favorites WHERE UserID = ? AND RecipeID = ?",
+                    (user_id, recipe_id)
+                )
+                new_status = False
+                action_type = "Unfavorited"
+            else:
+                # Add favorite
+                execute_non_query(
+                    "INSERT INTO Favorites (UserID, RecipeID) VALUES (?, ?)",
+                    (user_id, recipe_id)
+                )
+                new_status = True
+                action_type = "Favorited"
+            
+            # Get updated total favorites
+            total_favorites = execute_scalar(
+                "SELECT COUNT(*) FROM Favorites WHERE RecipeID = ?",
+                (recipe_id,)
+            ) or 0
+            
+            return {
+                "success": True,
+                "is_favorited": new_status,
+                "total_favorites": total_favorites,
+                "action_type": action_type,
+                "previous_state": is_favorited
+            }
+            
+        except Exception as e:
+            print(f"Error toggling recipe favorite: {e}")
+            return {"error": "Failed to toggle recipe favorite"}
+    
+    @classmethod
+    def get_total_favorites(cls, recipe_id: int) -> int:
+        """
+        Get total number of favorites for a recipe
+        
+        Args:
+            recipe_id (int): Recipe ID
+            
+        Returns:
+            int: Total number of favorites
+        """
+        try:
+            count = execute_scalar(
+                "SELECT COUNT(*) FROM Favorites WHERE RecipeID = ?",
+                (recipe_id,)
+            )
+            return count or 0
+            
+        except Exception as e:
+            print(f"Error getting total favorites: {e}")
+            return 0
