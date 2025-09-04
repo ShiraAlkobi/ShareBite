@@ -1,5 +1,4 @@
 backend/__pycache__/auth_routes.cpython-311.pyc
-GUI/main_app.py
 backend/__pycache__/chat_routes.cpython-311.pyc
 backend/__pycache__/database.cpython-311.pyc
 backend/__pycache__/main.cpython-311.pyc
@@ -68,3 +67,13 @@ GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
 GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
 GUI/views/__pycache__/recipe_details_view.cpython-311.pyc
 GUI/models/__pycache__/recipe_details_model.cpython-311.pyc
+GUI/presenters/__pycache__/profile_presenter.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+GUI/models/__pycache__/profile_model.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+backend/routes/__pycache__/user_routes.cpython-311.pyc
+GUI/models/__pycache__/profile_model.cpython-311.pyc
+GUI/models/__pycache__/profile_model.cpython-311.pyc

@@ -225,4 +225,14 @@ class RecipeDetailsPresenter(QObject):
     def cleanup(self):
         """Cleanup resources"""
         print("Cleaning up recipe details presenter resources")
-        # Any cleanup needed
+        
+        # Cleanup model resources (if the model has cleanup)
+        if hasattr(self.model, 'cleanup'):
+            self.model.cleanup()
+        
+        # Cleanup view resources (including image loading)
+        if hasattr(self.view, 'cleanup'):
+            self.view.cleanup()
+        
+        # Reset loading states
+        self.is_loading = False

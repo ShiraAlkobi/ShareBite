@@ -3,12 +3,13 @@ from PySide6.QtWidgets import (
     QPushButton, QFrame, QScrollArea, QLineEdit, QSplitter,
     QSpacerItem, QSizePolicy
 )
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer,QThread
 from PySide6.QtGui import QFont, QPixmap
 from typing import Optional, List, Dict, Any
 import json
 import html
 import ast
+from views.components.recipe_card import ImageLoader
 
 class ChatWidget(QFrame):
     """AI Chat widget integrated into recipe details"""
@@ -159,6 +160,8 @@ class RecipeDetailsView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.recipe_data = None
+        self.image_loader_thread = None
+        self.image_loader = None
         self.setObjectName("RecipeDetailsView")
         self.setup_ui()
         self.setup_connections()
@@ -525,11 +528,14 @@ class RecipeDetailsView(QWidget):
         self.like_button.setText(f"{'♥' if is_liked else '♡'} {likes_count}")
         self.favorite_button.setText("★" if is_favorited else "☆")
         
-        # Update image placeholder
-        if self.recipe_data.get('image_url'):
-            self.recipe_image.setText("🍽️")
+        # Load recipe image using shared ImageLoader
+        image_url = self.recipe_data.get('image_url')
+        if image_url and image_url.strip():
+            print(f"Loading recipe image: {image_url}")
+            self.load_recipe_image(image_url)
         else:
-            self.recipe_image.setText("📸")
+            print("No image URL, showing placeholder")
+            self.show_placeholder_image()
         
         # Clear chat for new recipe
         self.chat_widget.clear_chat()
@@ -579,3 +585,108 @@ class RecipeDetailsView(QWidget):
         if self.recipe_data:
             self.recipe_data['is_favorited'] = is_favorited
             self.favorite_button.setText("★" if is_favorited else "☆")
+
+    def load_recipe_image(self, image_url: str):
+        """Load recipe image from URL asynchronously using shared ImageLoader"""
+        try:
+            # Show loading placeholder
+            self.recipe_image.setText("🔄")
+            self.recipe_image.setStyleSheet("""
+                QLabel#RecipeImage {
+                    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                        stop:0 #667eea, stop:1 #764ba2);
+                    border-radius: 12px;
+                    color: white;
+                    font-size: 24px;
+                }
+            """)
+            
+            # Clean up any existing loader
+            self.cleanup_image_loader()
+            
+            # Create thread and worker for image loading (using shared ImageLoader)
+            self.image_loader_thread = QThread()
+            self.image_loader = ImageLoader(image_url, (200, 150))  # Custom size for recipe details
+            
+            # Move worker to thread
+            self.image_loader.moveToThread(self.image_loader_thread)
+            
+            # Connect signals
+            self.image_loader_thread.started.connect(self.image_loader.load_image)
+            self.image_loader.image_loaded.connect(self.on_image_loaded)
+            self.image_loader.image_failed.connect(self.on_image_failed)
+            
+            # Clean up thread when done
+            self.image_loader.image_loaded.connect(self.image_loader_thread.quit)
+            self.image_loader.image_failed.connect(self.image_loader_thread.quit)
+            self.image_loader_thread.finished.connect(self.image_loader.deleteLater)
+            self.image_loader_thread.finished.connect(self.image_loader_thread.deleteLater)
+            
+            # Start loading
+            self.image_loader_thread.start()
+            
+        except Exception as e:
+            print(f"Error setting up recipe image loading: {e}")
+            self.show_placeholder_image()
+
+    def on_image_loaded(self, pixmap: QPixmap):
+        """Handle successful image loading"""
+        try:
+            self.recipe_image.clear()
+            self.recipe_image.setStyleSheet("""
+                QLabel#RecipeImage {
+                    background: transparent;
+                    border-radius: 12px;
+                    border: 2px solid #e2e8f0;
+                }
+            """)
+            self.recipe_image.setPixmap(pixmap)
+            self.recipe_image.setScaledContents(False)
+            print(f"Successfully loaded recipe details image")
+        except Exception as e:
+            print(f"Error displaying loaded recipe image: {e}")
+            self.show_placeholder_image()
+    
+    def on_image_failed(self):
+        """Handle failed image loading"""
+        print(f"Failed to load recipe details image")
+        self.show_placeholder_image()
+    
+    def show_placeholder_image(self):
+        """Show placeholder when no image is available or loading failed"""
+        self.recipe_image.clear()
+        self.recipe_image.setText("🍽️")
+        self.recipe_image.setStyleSheet("""
+            QLabel#RecipeImage {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                    stop:0 #667eea, stop:1 #764ba2);
+                border-radius: 12px;
+                color: white;
+                font-size: 48px;
+            }
+        """)
+    
+    def cleanup_image_loader(self):
+        """Clean up image loading thread"""
+        try:
+            if hasattr(self, 'image_loader_thread') and self.image_loader_thread and self.image_loader_thread.isRunning():
+                if hasattr(self, 'image_loader') and self.image_loader:
+                    self.image_loader.stop()
+                
+                self.image_loader_thread.quit()
+                
+                if not self.image_loader_thread.wait(1000):
+                    self.image_loader_thread.terminate()
+                    self.image_loader_thread.wait(500)
+                
+                self.image_loader_thread = None
+                self.image_loader = None
+        except RuntimeError:
+            pass
+        except Exception as e:
+            print(f"Error during recipe details image cleanup: {e}")
+
+    def cleanup(self):
+        """Clean up resources"""
+        self.cleanup_image_loader()
+        print("Recipe details view cleaned up")

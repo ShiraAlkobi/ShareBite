@@ -16,6 +16,7 @@ from queries.tags_queries import GetAllTagsQuery, SearchTagsQuery, GetPopularTag
 from database import execute_query, execute_scalar, execute_non_query
 from auth_routes import verify_token
 
+
 router = APIRouter()
 
 # ============= EVENT SOURCING HELPER =============
@@ -72,7 +73,6 @@ async def upload_recipe_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(verify_token)
 ):
-    """Upload a recipe image and return the URL - LOGS ImageUploaded EVENT"""
     try:
         user_id = current_user["userid"]
         
@@ -111,11 +111,12 @@ async def upload_recipe_image(
             "file_type": file.content_type,
             "image_url": image_url,
             "uploaded_by": current_user["username"],
+            "upload_method": "local_storage",
             "timestamp": datetime.now().isoformat()
         }
         log_recipe_event(0, user_id, "ImageUploaded", upload_event_data)
         
-        print(f"Image uploaded successfully: {image_url}")
+        print(f"Image uploaded successfully (local): {image_url}")
         return {"image_url": image_url}
         
     except HTTPException:
@@ -123,7 +124,7 @@ async def upload_recipe_image(
     except Exception as e:
         print(f"Error uploading image: {e}")
         raise HTTPException(status_code=500, detail=f"Error uploading image: {str(e)}")
-
+    
 @router.get("/tags", response_model=TagsListResponse)
 async def get_all_tags():
     """Get all available tags for recipes - READ ONLY (no event logging)"""

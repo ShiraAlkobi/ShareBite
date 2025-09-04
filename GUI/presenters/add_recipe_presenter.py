@@ -33,7 +33,7 @@ class AddRecipePresenter(QObject):
         
         # State management
         self.is_creating = False
-        self.is_uploading_photo = False
+
         
         # Load available tags on initialization
         self.load_available_tags()
@@ -42,7 +42,6 @@ class AddRecipePresenter(QObject):
         """Connect model signals to presenter methods"""
         self.model.tags_loaded.connect(self.on_tags_loaded)
         self.model.recipe_created.connect(self.on_recipe_created)
-        self.model.photo_uploaded.connect(self.on_photo_uploaded)
         self.model.creation_error.connect(self.on_creation_error)
         self.model.network_error.connect(self.on_network_error)
     
@@ -75,42 +74,17 @@ class AddRecipePresenter(QObject):
         # Show loading state
         self.view.show_message("Creating recipe...", is_error=False)
         
-        # Process photo upload first if image is selected
-        if recipe_data.get('image_path'):
-            self.upload_recipe_photo(recipe_data)
-        else:
-            # Create recipe without photo
-            self.create_recipe_with_data(recipe_data, image_url=None)
+        # Create recipe directly with URL (no separate upload needed)
+        self.create_recipe_with_data(recipe_data)
     
-    def upload_recipe_photo(self, recipe_data: Dict[str, Any]):
-        """
-        Upload recipe photo first, then create recipe
-        
-        Args:
-            recipe_data (Dict): Recipe data including image_path
-        """
-        if self.is_uploading_photo:
-            return
-        
-        self.is_uploading_photo = True
-        image_path = recipe_data['image_path']
-        
-        print(f"Uploading recipe photo: {image_path}")
-        self.view.show_message("Uploading photo...", is_error=False)
-        
-        # Store recipe data for later use
-        self.pending_recipe_data = recipe_data
-        
-        # Upload photo
-        self.model.upload_recipe_photo(image_path)
+
     
-    def create_recipe_with_data(self, recipe_data: Dict[str, Any], image_url: Optional[str] = None):
+    def create_recipe_with_data(self, recipe_data: Dict[str, Any]):
         """
         Create recipe with the provided data
         
         Args:
             recipe_data (Dict): Recipe data
-            image_url (str): Uploaded image URL (optional)
         """
         # Prepare recipe creation data
         creation_data = {
@@ -120,11 +94,14 @@ class AddRecipePresenter(QObject):
             'ingredients': recipe_data['ingredients'],
             'instructions': recipe_data['instructions'],
             'servings': recipe_data.get('servings'),
-            'image_url': image_url,
+            'image_url': recipe_data.get('image_url'),  # Use URL directly
             'tags': recipe_data.get('tags', [])
         }
         
         print(f"Creating recipe with data: {creation_data['title']}")
+        if creation_data['image_url']:
+            print(f"Image URL: {creation_data['image_url']}")
+        
         self.model.create_recipe(creation_data)
     
     def on_tags_loaded(self, tags: List[str]):
@@ -148,8 +125,7 @@ class AddRecipePresenter(QObject):
         print(f"Recipe created successfully: ID {recipe_id}")
         
         self.is_creating = False
-        self.is_uploading_photo = False
-        
+         
         # Show success message
         self.view.show_message(f"Recipe created successfully! {message}", is_error=False)
         
@@ -163,21 +139,7 @@ class AddRecipePresenter(QObject):
         from PySide6.QtCore import QTimer
         QTimer.singleShot(2000, self.home_requested.emit)
     
-    def on_photo_uploaded(self, image_url: str):
-        """
-        Handle successful photo upload
-        
-        Args:
-            image_url (str): Uploaded image URL
-        """
-        print(f"Photo uploaded successfully: {image_url}")
-        
-        self.is_uploading_photo = False
-        
-        # Now create recipe with the uploaded image URL
-        if hasattr(self, 'pending_recipe_data'):
-            self.create_recipe_with_data(self.pending_recipe_data, image_url)
-            delattr(self, 'pending_recipe_data')
+
     
     def on_creation_error(self, error_message: str):
         """
@@ -187,7 +149,7 @@ class AddRecipePresenter(QObject):
             error_message (str): Error message
         """
         self.is_creating = False
-        self.is_uploading_photo = False
+
         
         print(f"Recipe creation error: {error_message}")
         self.view.show_message(f"Error creating recipe: {error_message}", is_error=True)
@@ -200,7 +162,6 @@ class AddRecipePresenter(QObject):
             error_message (str): Network error message
         """
         self.is_creating = False
-        self.is_uploading_photo = False
         
         print(f"Network error: {error_message}")
         self.view.show_message(f"Network Error: {error_message}", is_error=True)
@@ -235,3 +196,4 @@ class AddRecipePresenter(QObject):
     def get_current_user(self) -> UserData:
         """Get current user data"""
         return self.user_data
+    

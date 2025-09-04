@@ -11,250 +11,9 @@ from models.home_model import RecipeData
 from models.login_model import UserData
 import requests
 from io import BytesIO
+from views.components.recipe_card import HomeRecipeCard
 
-class ImageLoader(QObject):
-    """Worker class for loading images asynchronously"""
-    image_loaded = Signal(QPixmap)
-    image_failed = Signal()
-    
-    def __init__(self, image_url: str, size: tuple = (140, 140)):
-        super().__init__()
-        self.image_url = image_url
-        self.target_size = size
-    
-    def load_image(self):
-        """Load image from URL"""
-        try:
-            response = requests.get(self.image_url, timeout=10, stream=True)
-            if response.status_code == 200:
-                # Read image data
-                image_data = BytesIO()
-                for chunk in response.iter_content(chunk_size=8192):
-                    image_data.write(chunk)
-                image_data.seek(0)
-                
-                # Create QPixmap from image data
-                pixmap = QPixmap()
-                if pixmap.loadFromData(image_data.getvalue()):
-                    # Scale image to fit container while maintaining aspect ratio
-                    scaled_pixmap = pixmap.scaled(
-                        self.target_size[0], 
-                        self.target_size[1], 
-                        Qt.KeepAspectRatio, 
-                        Qt.SmoothTransformation
-                    )
-                    self.image_loaded.emit(scaled_pixmap)
-                    return
-            
-            self.image_failed.emit()
-            
-        except Exception as e:
-            print(f"Error loading image from {self.image_url}: {e}")
-            self.image_failed.emit()
 
-class RecipeCard(QFrame):
-    """Individual recipe card widget displaying dish name, image, date, and author"""
-    
-    recipe_clicked = Signal(int)  # recipe_id
-    recipe_liked = Signal(int)  # recipe_id
-    recipe_favorited = Signal(int)  # recipe_id
-    
-    def __init__(self, recipe: RecipeData, parent=None):
-        super().__init__(parent)
-        self.recipe = recipe
-        self.setObjectName("RecipeCard")
-        self.image_loader_thread = None
-        self.image_loader = None
-        self.setup_ui()
-
-    def setup_ui(self):
-        """Setup recipe card UI components"""
-        # Much smaller card size for better screen fit
-        self.setFixedSize(280, 320)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        # Recipe image container
-        image_container = QFrame()
-        image_container.setObjectName("RecipeImageContainer")
-        image_container.setFixedHeight(140)
-        
-        image_layout = QVBoxLayout(image_container)
-        image_layout.setContentsMargins(0, 0, 0, 0)
-        image_layout.setAlignment(Qt.AlignCenter)
-
-        # Image label - will be updated with actual image or placeholder
-        self.image_label = QLabel()
-        self.image_label.setObjectName("RecipeImage")
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setFixedSize(140, 140)
-        self.image_label.setScaledContents(False)  # We'll handle scaling manually
-        
-        # Load image if URL is available
-        if self.recipe.image_url and self.recipe.image_url.strip():
-            self.load_recipe_image()
-        else:
-            self.show_placeholder_image()
-        
-        image_layout.addWidget(self.image_label)
-
-        # Content container
-        content_container = QFrame()
-        content_container.setObjectName("RecipeContent")
-        
-        content_layout = QVBoxLayout(content_container)
-        content_layout.setContentsMargins(16, 12, 16, 12)
-        content_layout.setSpacing(8)
-
-        # Recipe title
-        self.title_label = QLabel(self.recipe.title)
-        self.title_label.setObjectName("RecipeTitle")
-        self.title_label.setWordWrap(True)
-
-        # Recipe metadata container
-        meta_container = QFrame()
-        meta_container.setObjectName("RecipeMetadata")
-        meta_layout = QVBoxLayout(meta_container)
-        meta_layout.setContentsMargins(0, 0, 0, 0)
-        meta_layout.setSpacing(2)
-
-        # Author
-        author_label = QLabel(f"by Chef {self.recipe.author_name}")
-        author_label.setObjectName("RecipeAuthor")
-
-        # Date
-        date_label = QLabel(f"Created: {self.recipe.created_at or 'Date unknown'}")
-        date_label.setObjectName("RecipeDate")
-
-        meta_layout.addWidget(author_label)
-        meta_layout.addWidget(date_label)
-
-        # Actions container
-        actions_container = QFrame()
-        actions_container.setObjectName("RecipeActions")
-        
-        actions_layout = QHBoxLayout(actions_container)
-        actions_layout.setContentsMargins(0, 0, 0, 0)
-        actions_layout.setSpacing(6)
-
-        # Like button
-        self.like_button = QPushButton(f"♥ {self.recipe.likes_count}")
-        self.like_button.setObjectName("LikeButton")
-        self.like_button.setProperty("liked", str(self.recipe.is_liked).lower())
-        self.like_button.clicked.connect(lambda: self.recipe_liked.emit(self.recipe.recipe_id))
-
-        # Favorite button
-        self.favorite_button = QPushButton("★" if self.recipe.is_favorited else "☆")
-        self.favorite_button.setObjectName("FavoriteButton")
-        self.favorite_button.setProperty("favorited", str(self.recipe.is_favorited).lower())
-        self.favorite_button.clicked.connect(lambda: self.recipe_favorited.emit(self.recipe.recipe_id))
-
-        # View button
-        view_button = QPushButton("View")
-        view_button.setObjectName("ViewRecipeButton")
-        view_button.clicked.connect(lambda: self.recipe_clicked.emit(self.recipe.recipe_id))
-
-        actions_layout.addWidget(self.like_button)
-        actions_layout.addWidget(self.favorite_button)
-        actions_layout.addStretch()
-        actions_layout.addWidget(view_button)
-
-        # Add all containers to main layout
-        content_layout.addWidget(self.title_label)
-        content_layout.addWidget(meta_container)
-        content_layout.addStretch()
-        content_layout.addWidget(actions_container)
-
-        layout.addWidget(image_container)
-        layout.addWidget(content_container)
-    
-    def load_recipe_image(self):
-        """Load recipe image from URL asynchronously"""
-        try:
-            # Show loading placeholder
-            self.image_label.setText("🔄")
-            self.image_label.setStyleSheet("font-size: 24px; color: #666;")
-            
-            # Create thread and worker for image loading
-            self.image_loader_thread = QThread()
-            self.image_loader = ImageLoader(self.recipe.image_url, (140, 140))
-            
-            # Move worker to thread
-            self.image_loader.moveToThread(self.image_loader_thread)
-            
-            # Connect signals
-            self.image_loader_thread.started.connect(self.image_loader.load_image)
-            self.image_loader.image_loaded.connect(self.on_image_loaded)
-            self.image_loader.image_failed.connect(self.on_image_failed)
-            
-            # Clean up thread when done
-            self.image_loader.image_loaded.connect(self.image_loader_thread.quit)
-            self.image_loader.image_failed.connect(self.image_loader_thread.quit)
-            self.image_loader_thread.finished.connect(self.image_loader.deleteLater)
-            self.image_loader_thread.finished.connect(self.image_loader_thread.deleteLater)
-            
-            # Start loading
-            self.image_loader_thread.start()
-            
-        except Exception as e:
-            print(f"Error setting up image loading: {e}")
-            self.show_placeholder_image()
-    
-    def on_image_loaded(self, pixmap: QPixmap):
-        """Handle successful image loading"""
-        try:
-            self.image_label.clear()
-            self.image_label.setStyleSheet("")  # Clear loading styles
-            self.image_label.setPixmap(pixmap)
-            print(f"Successfully loaded image for recipe: {self.recipe.title}")
-        except Exception as e:
-            print(f"Error displaying loaded image: {e}")
-            self.show_placeholder_image()
-    
-    def on_image_failed(self):
-        """Handle failed image loading"""
-        print(f"Failed to load image for recipe: {self.recipe.title}")
-        self.show_placeholder_image()
-    
-    def show_placeholder_image(self):
-        """Show placeholder when no image is available or loading failed"""
-        self.image_label.clear()
-        self.image_label.setText("🍽️")
-        self.image_label.setStyleSheet("""
-            font-size: 48px;
-            color: #888;
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        """)
-    
-    def update_like_status(self, is_liked: bool, likes_count: int):
-        """Update like button status"""
-        self.recipe.is_liked = is_liked
-        self.recipe.likes_count = likes_count
-        
-        self.like_button.setText(f"♥ {likes_count}")
-        self.like_button.setProperty("liked", str(is_liked).lower())
-        self.like_button.style().unpolish(self.like_button)
-        self.like_button.style().polish(self.like_button)
-    
-    def update_favorite_status(self, is_favorited: bool):
-        """Update favorite button status"""
-        self.recipe.is_favorited = is_favorited
-        
-        star_symbol = "★" if is_favorited else "☆"
-        self.favorite_button.setText(star_symbol)
-        self.favorite_button.setProperty("favorited", str(is_favorited).lower())
-        self.favorite_button.style().unpolish(self.favorite_button)
-        self.favorite_button.style().polish(self.favorite_button)
-    
-    def cleanup(self):
-        """Clean up resources when card is destroyed"""
-        if self.image_loader_thread and self.image_loader_thread.isRunning():
-            self.image_loader_thread.quit()
-            self.image_loader_thread.wait(1000)  # Wait up to 1 second
 
 class SearchBar(QFrame):
     """Modern compact search bar widget with filters"""
@@ -371,7 +130,6 @@ class HomeView(QWidget):
         # Create scrollable content widget
         content_widget = QWidget()
         content_widget.setObjectName("HomeContentWidget")
-        
         # Main layout for the window
         window_layout = QVBoxLayout(self)
         window_layout.setContentsMargins(0, 0, 0, 0)
@@ -624,7 +382,8 @@ class HomeView(QWidget):
             row = i // columns
             col = i % columns
             
-            card = RecipeCard(recipe)
+            # Use the shared HomeRecipeCard component
+            card = HomeRecipeCard(recipe)
             card.recipe_clicked.connect(self.recipe_clicked.emit)
             card.recipe_liked.connect(self.recipe_liked.emit)
             card.recipe_favorited.connect(self.recipe_favorited.emit)
@@ -634,7 +393,7 @@ class HomeView(QWidget):
         
         # Update content title
         self.content_title.setText(f"Latest Recipes ({len(recipes)})")
-    
+        
     def display_search_results(self, recipes: List[RecipeData], query: str):
         """Display search results with query context"""
         self.display_recipes(recipes)
@@ -674,12 +433,53 @@ class HomeView(QWidget):
     
     def clear_recipe_grid(self):
         """Clear all recipe cards from grid with proper cleanup"""
-        for card in self.recipe_cards.values():
-            # Clean up image loading threads
-            card.cleanup()
-            self.recipe_layout.removeWidget(card)
-            card.deleteLater()
+        # Create a list of cards to avoid dictionary modification during iteration
+        cards_to_remove = list(self.recipe_cards.values())
+        
+        for card in cards_to_remove:
+            try:
+                # Only cleanup if the card still exists - check if widget is valid
+                if card and hasattr(card, 'cleanup'):
+                    card.cleanup()
+                
+                # Remove from layout safely - check if still in layout
+                try:
+                    if self.recipe_layout.indexOf(card) != -1:
+                        self.recipe_layout.removeWidget(card)
+                except RuntimeError:
+                    # Widget already removed from layout
+                    pass
+                
+                # Hide the card first to prevent rendering issues
+                try:
+                    card.hide()
+                except RuntimeError:
+                    # Widget already deleted
+                    pass
+                
+                # Schedule for deletion
+                try:
+                    card.deleteLater()
+                except RuntimeError:
+                    # Widget already scheduled for deletion
+                    pass
+                    
+            except RuntimeError:
+                # Widget already deleted, just continue
+                print(f"Widget already deleted during cleanup")
+                continue
+            except Exception as e:
+                print(f"Error cleaning up recipe card: {e}")
+                continue
+        
+        # Clear the dictionary
         self.recipe_cards.clear()
+        
+        # Force layout update
+        try:
+            self.recipe_layout.update()
+        except RuntimeError:
+            pass
     
     def show_empty_state(self, message: str):
         """Show compact empty state message"""

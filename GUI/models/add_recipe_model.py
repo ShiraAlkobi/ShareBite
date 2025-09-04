@@ -13,7 +13,6 @@ class AddRecipeModel(QObject):
     # Signals for communication with Presenter
     tags_loaded = Signal(list)  # List[str]
     recipe_created = Signal(int, str)  # recipe_id, success_message
-    photo_uploaded = Signal(str)  # image_url
     creation_error = Signal(str)  # error_message
     network_error = Signal(str)  # network_error_message
     
@@ -139,86 +138,6 @@ class AddRecipeModel(QObject):
         except Exception as e:
             self.creation_error.emit(f"An unexpected error occurred: {str(e)}")
     
-    def upload_recipe_photo(self, image_path: str) -> None:
-        """
-        Upload a recipe photo
-        
-        Args:
-            image_path (str): Local path to the image file
-        """
-        print(f"Uploading recipe photo: {image_path}")
-        
-        try:
-            if not os.path.exists(image_path):
-                self.creation_error.emit("Selected image file does not exist")
-                return
-            
-            # Check file size (limit to 10MB)
-            file_size = os.path.getsize(image_path)
-            if file_size > 10 * 1024 * 1024:  # 10MB
-                self.creation_error.emit("Image file is too large (maximum 10MB)")
-                return
-            
-            # Prepare file for upload
-            file_name = os.path.basename(image_path)
-            
-            with open(image_path, 'rb') as image_file:
-                files = {
-                    'file': (file_name, image_file, self._get_content_type(image_path))
-                }
-                
-                # Upload to the server
-                response = self.session.post(
-                    f"{self.base_url}/api/v1/recipes/upload-image",
-                    files=files,
-                    timeout=30  # Longer timeout for file uploads
-                )
-            
-            print(f"Photo upload response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                image_url = data.get("image_url") or data.get("url")
-                
-                if image_url:
-                    print(f"Photo uploaded successfully: {image_url}")
-                    self.photo_uploaded.emit(image_url)
-                else:
-                    self.creation_error.emit("Server did not return image URL")
-                
-            else:
-                error_data = response.json() if response.headers.get('content-type') == 'application/json' else {}
-                error_message = error_data.get("detail", f"Failed to upload image (status: {response.status_code})")
-                self.creation_error.emit(error_message)
-                
-        except requests.exceptions.Timeout:
-            self.network_error.emit("Photo upload timed out. Please try again.")
-        except requests.exceptions.ConnectionError:
-            self.network_error.emit("Cannot connect to server. Please check your internet connection.")
-        except requests.exceptions.RequestException as e:
-            self.network_error.emit(f"Network error during upload: {str(e)}")
-        except Exception as e:
-            self.creation_error.emit(f"An unexpected error occurred during upload: {str(e)}")
-    
-    def _get_content_type(self, file_path: str) -> str:
-        """
-        Get content type for file upload based on file extension
-        
-        Args:
-            file_path (str): Path to the file
-            
-        Returns:
-            str: MIME type
-        """
-        ext = os.path.splitext(file_path)[1].lower()
-        content_types = {
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.png': 'image/png',
-            '.gif': 'image/gif',
-            '.bmp': 'image/bmp'
-        }
-        return content_types.get(ext, 'application/octet-stream')
     
 
     
@@ -288,6 +207,11 @@ class AddRecipeModel(QObject):
         servings = recipe_data.get('servings')
         if servings is not None and (servings < 1 or servings > 50):
             errors.append("Servings must be between 1 and 50")
+        
+        # Image URL validation
+        image_url = recipe_data.get('image_url')
+        if image_url and not image_url.startswith(('http://', 'https://')):
+            errors.append("Image URL must start with http:// or https://")
         
         # Tags validation
         tags = recipe_data.get('tags', [])
