@@ -2,39 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from routes.auth_routes import verify_token
-from database import execute_query, execute_scalar, execute_non_query
+from models.analytics import Analytics
 from datetime import datetime
-import json
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
-
-# ============= EVENT SOURCING HELPER =============
-def log_analytics_event(user_id: int, action_type: str, event_data: dict = None):
-    """
-    Log an analytics event to the RecipeEvents table for event sourcing
-    Note: We use recipe_id = 0 for analytics-related events since they're not recipe-specific
-    
-    Args:
-        user_id (int): ID of the user performing the action
-        action_type (str): Type of action (AnalyticsViewed, etc.)
-        event_data (Dict): Additional data to store as JSON
-    """
-    try:
-        # Convert event_data to JSON string if provided
-        event_data_json = json.dumps(event_data) if event_data else None
-        
-        # Insert event into RecipeEvents table (using RecipeID = 0 for analytics events)
-        execute_non_query(
-            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
-               VALUES (?, ?, ?, ?)""",
-            (0, user_id, action_type, event_data_json)
-        )
-        
-        print(f"Analytics event logged: {action_type} - User {user_id}")
-        
-    except Exception as e:
-        print(f"Failed to log analytics event: {e}")
-        # Don't raise exception - event logging failure shouldn't break the main operation
 
 class TagAnalyticsData(BaseModel):
     tag_name: str
@@ -70,7 +41,7 @@ async def get_user_analytics(
         
         print(f"Getting analytics for user: {user_id}")
         
-        # Log analytics access event
+        # Log analytics access event using Analytics model
         analytics_event_data = {
             "analytics_type": "user_specific",
             "target_user_id": user_id,
@@ -79,22 +50,10 @@ async def get_user_analytics(
             "is_own_analytics": current_user["userid"] == user_id,
             "timestamp": datetime.now().isoformat()
         }
-        log_analytics_event(current_user["userid"], "AnalyticsViewed", analytics_event_data)
+        Analytics.log_analytics_event(current_user["userid"], "AnalyticsViewed", analytics_event_data)
         
-        # Get tag distribution for user's recipes
-        tag_query = """
-        SELECT 
-            t.TagName,
-            COUNT(rt.RecipeID) as RecipeCount
-        FROM Tags t
-        JOIN RecipeTags rt ON t.TagID = rt.TagID
-        JOIN Recipes r ON rt.RecipeID = r.RecipeID
-        WHERE r.AuthorID = ?
-        GROUP BY t.TagID, t.TagName
-        ORDER BY COUNT(rt.RecipeID) DESC
-        """
-        
-        tag_results = execute_query(tag_query, (user_id,))
+        # Get tag distribution for user's recipes using Analytics model
+        tag_results = Analytics.get_user_tag_distribution(user_id)
         
         # Calculate total recipes for percentage calculation
         total_recipes_with_tags = sum(row["RecipeCount"] for row in tag_results)
@@ -123,23 +82,8 @@ async def get_user_analytics(
                 percentage=round(other_percentage, 1)
             ))
         
-        # Get most popular recipes by likes count
-        popularity_query = """
-        SELECT 
-            r.RecipeID,
-            r.Title,
-            u.Username as AuthorName,
-            COUNT(l.UserID) as LikesCount
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        LEFT JOIN Likes l ON r.RecipeID = l.RecipeID
-        WHERE r.AuthorID = ?
-        GROUP BY r.RecipeID, r.Title, u.Username
-        ORDER BY COUNT(l.UserID) DESC
-        OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
-        """
-        
-        popularity_results = execute_query(popularity_query, (user_id,))
+        # Get most popular recipes by likes count using Analytics model
+        popularity_results = Analytics.get_user_popular_recipes(user_id, 10)
         
         popular_recipes = []
         for row in popularity_results:
@@ -150,20 +94,8 @@ async def get_user_analytics(
                 likes_count=row["LikesCount"]
             ))
         
-        # Get total statistics
-        total_recipes = execute_scalar(
-            "SELECT COUNT(*) FROM Recipes WHERE AuthorID = ?",
-            (user_id,)
-        ) or 0
-        
-        total_tags = execute_scalar(
-            """SELECT COUNT(DISTINCT t.TagID) 
-               FROM Tags t
-               JOIN RecipeTags rt ON t.TagID = rt.TagID
-               JOIN Recipes r ON rt.RecipeID = r.RecipeID
-               WHERE r.AuthorID = ?""",
-            (user_id,)
-        ) or 0
+        # Get total statistics using Analytics model
+        total_recipes, total_tags = Analytics.get_user_recipe_stats(user_id)
         
         print(f"Analytics data retrieved: {len(tag_distribution)} tag categories, {len(popular_recipes)} popular recipes")
         
@@ -193,27 +125,17 @@ async def get_global_analytics(
     try:
         print("Getting global analytics")
         
-        # Log global analytics access event
+        # Log global analytics access event using Analytics model
         analytics_event_data = {
             "analytics_type": "global",
             "requested_by_user_id": current_user["userid"],
             "requested_by_username": current_user["username"],
             "timestamp": datetime.now().isoformat()
         }
-        log_analytics_event(current_user["userid"], "GlobalAnalyticsViewed", analytics_event_data)
+        Analytics.log_analytics_event(current_user["userid"], "GlobalAnalyticsViewed", analytics_event_data)
         
-        # Get global tag distribution
-        tag_query = """
-        SELECT 
-            t.TagName,
-            COUNT(rt.RecipeID) as RecipeCount
-        FROM Tags t
-        JOIN RecipeTags rt ON t.TagID = rt.TagID
-        GROUP BY t.TagID, t.TagName
-        ORDER BY COUNT(rt.RecipeID) DESC
-        """
-        
-        tag_results = execute_query(tag_query)
+        # Get global tag distribution using Analytics model
+        tag_results = Analytics.get_global_tag_distribution()
         
         # Calculate total recipes for percentage calculation
         total_recipes_with_tags = sum(row["RecipeCount"] for row in tag_results)
@@ -242,22 +164,8 @@ async def get_global_analytics(
                 percentage=round(other_percentage, 1)
             ))
         
-        # Get most popular recipes globally
-        popularity_query = """
-        SELECT 
-            r.RecipeID,
-            r.Title,
-            u.Username as AuthorName,
-            COUNT(l.UserID) as LikesCount
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        LEFT JOIN Likes l ON r.RecipeID = l.RecipeID
-        GROUP BY r.RecipeID, r.Title, u.Username
-        ORDER BY COUNT(l.UserID) DESC
-        OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
-        """
-        
-        popularity_results = execute_query(popularity_query)
+        # Get most popular recipes globally using Analytics model
+        popularity_results = Analytics.get_global_popular_recipes(10)
         
         popular_recipes = []
         for row in popularity_results:
@@ -268,9 +176,8 @@ async def get_global_analytics(
                 likes_count=row["LikesCount"]
             ))
         
-        # Get total statistics
-        total_recipes = execute_scalar("SELECT COUNT(*) FROM Recipes") or 0
-        total_tags = execute_scalar("SELECT COUNT(*) FROM Tags") or 0
+        # Get total statistics using Analytics model
+        total_recipes, total_tags = Analytics.get_global_recipe_stats()
         
         print(f"Global analytics retrieved: {len(tag_distribution)} tag categories, {len(popular_recipes)} popular recipes")
         

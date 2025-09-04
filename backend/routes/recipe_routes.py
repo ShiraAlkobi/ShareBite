@@ -1,49 +1,30 @@
+"""
+Recipe Routes - Controller Layer for ShareBite backend
+
+This module provides recipe endpoints following MVC architecture.
+Controllers handle requests and coordinate with models to return responses.
+"""
+
 from fastapi import APIRouter, HTTPException, Depends, status, Query
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from routes.auth_routes import verify_token
 from datetime import datetime, timedelta
-from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id , get_database_cursor
 import sys
 import os
-import json
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Import models
 from models.recipe import Recipe
 from models.user import User
+from models.like import Like
+from models.favorite import Favorite
 
 from routes.auth_routes import SECRET_KEY
 print(f"Recipe routes using SECRET_KEY: {SECRET_KEY[:10]}...")
 
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
-
-# ============= EVENT SOURCING HELPER =============
-def log_recipe_event(recipe_id: int, user_id: int, action_type: str, event_data: Dict = None):
-    """
-    Log an event to the RecipeEvents table for event sourcing
-    
-    Args:
-        recipe_id (int): ID of the recipe involved
-        user_id (int): ID of the user performing the action
-        action_type (str): Type of action (Created, Updated, Liked, Unliked, Favorited, Unfavorited, Deleted)
-        event_data (Dict): Additional data to store as JSON
-    """
-    try:
-        # Convert event_data to JSON string if provided
-        event_data_json = json.dumps(event_data) if event_data else None
-        
-        # Insert event into RecipeEvents table
-        execute_non_query(
-            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
-               VALUES (?, ?, ?, ?)""",
-            (recipe_id, user_id, action_type, event_data_json)
-        )
-        
-        print(f"📝 Event logged: {action_type} - Recipe {recipe_id} by User {user_id}")
-        
-    except Exception as e:
-        print(f"⚠️ Failed to log event: {e}")
-        # Don't raise exception - event logging failure shouldn't break the main operation
 
 # ============= CACHE IMPLEMENTATION =============
 class RecipeCache:
@@ -227,7 +208,7 @@ async def search_recipes(
         print(f"Searching recipes for user: {current_user['username']} (ID: {user_id})")
         print(f"Query: '{q}', Category: {category}, Author: {author}")
         
-        # Log search event
+        # Log search event using model
         search_event_data = {
             "search_query": q,
             "category": category,
@@ -235,217 +216,20 @@ async def search_recipes(
             "limit": limit,
             "offset": offset
         }
-        # Note: For search, we use recipe_id = 0 since it's not a specific recipe action
-        log_recipe_event(0, user_id, "Searched", search_event_data)
+        Recipe.log_recipe_event(0, user_id, "Searched", search_event_data)
         
-        # Build search query with user-specific like/favorite status
-        base_query = """
-        SELECT 
-            r.RecipeID,
-            r.Title,
-            r.Description,
-            r.Ingredients,
-            r.Instructions,
-            r.ImageURL,
-            r.RawIngredients,
-            r.Servings,
-            r.CreatedAt,
-            r.AuthorID,
-            u.Username as AuthorName,
-            (SELECT COUNT(*) FROM Likes WHERE RecipeID = r.RecipeID) as LikesCount,
-            CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsLiked,
-            CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsFavorited
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        WHERE 1=1
-        """
+        # Search recipes using model
+        search_result = Recipe.search_recipes_with_filters(
+            user_id=user_id,
+            query=q,
+            category=category,
+            author=author,
+            limit=limit,
+            offset=offset
+        )
         
-        # Build WHERE conditions and parameters
-        conditions = []
-        params = [user_id, user_id]  # For the IsLiked and IsFavorited subqueries
-        
-        # Search in multiple fields - Enhanced for multi-word queries
-        if q and q.strip():
-            search_query = q.strip()
-            search_terms = search_query.split()
-            
-            print(f"Search terms: {search_terms}")
-            print(f"Original query: '{search_query}'")
-            
-            if len(search_terms) == 1:
-                # Single word search - use original logic
-                search_condition = """
-                (LOWER(r.Title) LIKE LOWER(?) 
-                 OR LOWER(r.Description) LIKE LOWER(?) 
-                 OR LOWER(r.Ingredients) LIKE LOWER(?) 
-                 OR LOWER(r.RawIngredients) LIKE LOWER(?))
-                """
-                search_term = f"%{search_query}%"
-                conditions.append(search_condition)
-                params.extend([search_term, search_term, search_term, search_term])
-                print(f"Single word search with term: '{search_term}'")
-                
-            else:
-                # Multi-word search - each word must appear somewhere in the record
-                word_conditions = []
-                for term in search_terms:
-                    word_condition = """
-                    (LOWER(r.Title) LIKE LOWER(?) 
-                     OR LOWER(r.Description) LIKE LOWER(?) 
-                     OR LOWER(r.Ingredients) LIKE LOWER(?) 
-                     OR LOWER(r.RawIngredients) LIKE LOWER(?))
-                    """
-                    word_conditions.append(word_condition)
-                    word_term = f"%{term}%"
-                    params.extend([word_term, word_term, word_term, word_term])
-                
-                # All words must be found (AND logic)
-                multi_word_condition = "(" + " AND ".join(word_conditions) + ")"
-                conditions.append(multi_word_condition)
-                print(f"Multi-word search with {len(search_terms)} terms, added {len(search_terms) * 4} parameters")
-        
-        # Category filter (if provided)
-        if category and category.lower() != "all":
-            category_condition = """
-            (LOWER(r.Title) LIKE LOWER(?) 
-             OR LOWER(r.Description) LIKE LOWER(?))
-            """
-            conditions.append(category_condition)
-            category_term = f"%{category.strip()}%"
-            params.extend([category_term, category_term])
-        
-        # Author filter (if provided)
-        if author and author.strip():
-            conditions.append("LOWER(u.Username) LIKE LOWER(?)")
-            params.append(f"%{author.strip()}%")
-        
-        # Combine all conditions
-        if conditions:
-            base_query += " AND " + " AND ".join(conditions)
-        
-        # Add ordering and pagination (SQL Server syntax)
-        base_query += """
-        ORDER BY r.CreatedAt DESC
-        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """
-        params.extend([offset, limit])
-        
-        print(f"Executing search query with {len(params)} parameters")
-        print(f"Original search query: '{q}'")
-        print(f"Full query: {base_query}")
-        print(f"Parameters: {params}")
-        
-        # Execute search query
-        search_results = execute_query(base_query, tuple(params))
-        
-        print(f"Found {len(search_results)} recipes matching search criteria")
-        
-        # Convert results to API format
-        recipes = []
-        for row in search_results:
-            try:
-                # Format created_at
-                created_at_str = datetime.now().isoformat()
-                if row.get('CreatedAt'):
-                    if isinstance(row['CreatedAt'], str):
-                        created_at_str = row['CreatedAt']
-                    else:
-                        try:
-                            created_at_str = row['CreatedAt'].isoformat()
-                        except:
-                            created_at_str = str(row['CreatedAt'])
-                
-                recipe_dict = {
-                    "recipe_id": row['RecipeID'],
-                    "title": row.get('Title') or "Untitled Recipe",
-                    "description": row.get('Description') or "",
-                    "author_name": row.get('AuthorName') or "Unknown Chef",
-                    "author_id": row['AuthorID'],
-                    "image_url": row.get('ImageURL'),
-                    "ingredients": row.get('Ingredients'),
-                    "instructions": row.get('Instructions'),
-                    "raw_ingredients": row.get('RawIngredients'),
-                    "servings": row.get('Servings'),
-                    "created_at": created_at_str,
-                    "likes_count": row.get('LikesCount') or 0,
-                    "is_liked": bool(row.get('IsLiked')),
-                    "is_favorited": bool(row.get('IsFavorited'))
-                }
-                recipes.append(recipe_dict)
-                
-            except Exception as e:
-                print(f"Error processing search result row: {e}")
-                continue
-        
-        # Build separate count query without user-specific fields to avoid parameter mismatch
-        count_base_query = """
-        SELECT COUNT(*)
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        WHERE 1=1
-        """
-        
-        # Add the same conditions as the main query but without user-specific parameters
-        count_conditions = []
-        count_params = []
-        
-        # Search in multiple fields - Enhanced count query logic
-        if q and q.strip():
-            # Split search terms for better matching (same logic as main query)
-            search_terms = q.strip().split()
-            
-            if len(search_terms) == 1:
-                # Single word search
-                search_condition = """
-                (LOWER(r.Title) LIKE LOWER(?) 
-                 OR LOWER(r.Description) LIKE LOWER(?) 
-                 OR LOWER(r.Ingredients) LIKE LOWER(?) 
-                 OR LOWER(r.RawIngredients) LIKE LOWER(?))
-                """
-                count_conditions.append(search_condition)
-                search_term = f"%{q.strip()}%"
-                count_params.extend([search_term, search_term, search_term, search_term])
-                
-            else:
-                # Multi-word search - each word must appear somewhere
-                word_conditions = []
-                for term in search_terms:
-                    word_condition = """
-                    (LOWER(r.Title) LIKE LOWER(?) 
-                     OR LOWER(r.Description) LIKE LOWER(?) 
-                     OR LOWER(r.Ingredients) LIKE LOWER(?) 
-                     OR LOWER(r.RawIngredients) LIKE LOWER(?))
-                    """
-                    word_conditions.append(word_condition)
-                    word_term = f"%{term}%"
-                    count_params.extend([word_term, word_term, word_term, word_term])
-                
-                # All words must be found (AND logic)
-                multi_word_condition = "(" + " AND ".join(word_conditions) + ")"
-                count_conditions.append(multi_word_condition)
-        
-        # Category filter (if provided)
-        if category and category.lower() != "all":
-            category_condition = """
-            (LOWER(r.Title) LIKE LOWER(?) 
-             OR LOWER(r.Description) LIKE LOWER(?))
-            """
-            count_conditions.append(category_condition)
-            category_term = f"%{category.strip()}%"
-            count_params.extend([category_term, category_term])
-        
-        # Author filter (if provided)
-        if author and author.strip():
-            count_conditions.append("LOWER(u.Username) LIKE LOWER(?)")
-            count_params.append(f"%{author.strip()}%")
-        
-        # Combine count conditions
-        if count_conditions:
-            count_base_query += " AND " + " AND ".join(count_conditions)
-        
-        total_count = execute_scalar(count_base_query, tuple(count_params)) or 0
+        recipes = search_result["recipes"]
+        total_count = search_result["total_count"]
         
         print(f"Returning {len(recipes)} search results (total: {total_count})")
         
@@ -487,7 +271,7 @@ async def get_recipes(
                 "offset": offset,
                 "force_refresh": force_refresh
             }
-            log_recipe_event(0, user_id, "ViewedList", view_event_data)
+            Recipe.log_recipe_event(0, user_id, "ViewedList", view_event_data)
         
         # Check if we need to refresh due to user change or force refresh
         if not force_refresh:
@@ -506,73 +290,12 @@ async def get_recipes(
                     from_cache=True
                 )
         
-        # Cache miss or force refresh - load from database
+        # Cache miss or force refresh - load from database using model
         print(f"Loading recipes from database for user {user_id}...")
         
-        # Enhanced query that gets user-specific like/favorite status
-        query = """
-        SELECT 
-            r.RecipeID,
-            r.Title,
-            r.Description,
-            r.Ingredients,
-            r.Instructions,
-            r.ImageURL,
-            r.RawIngredients,
-            r.Servings,
-            r.CreatedAt,
-            r.AuthorID,
-            u.Username as AuthorName,
-            (SELECT COUNT(*) FROM Likes WHERE RecipeID = r.RecipeID) as LikesCount,
-            CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsLiked,
-            CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsFavorited
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        ORDER BY r.CreatedAt DESC
-        """
+        all_recipes = Recipe.get_all_with_user_interactions(user_id)
         
-        # Load all recipes with user-specific data
-        all_recipes_data = execute_query(query, (user_id, user_id))
-        
-        print(f"Retrieved {len(all_recipes_data)} total recipes from database for user {user_id}")
-        
-        # Convert to API format
-        all_recipes = []
-        for row in all_recipes_data:
-            try:
-                created_at_str = datetime.now().isoformat()
-                if row.get('CreatedAt'):
-                    if isinstance(row['CreatedAt'], str):
-                        created_at_str = row['CreatedAt']
-                    else:
-                        try:
-                            created_at_str = row['CreatedAt'].isoformat()
-                        except:
-                            created_at_str = str(row['CreatedAt'])
-                
-                recipe_dict = {
-                    "recipe_id": row['RecipeID'],
-                    "title": row.get('Title') or "Untitled Recipe",
-                    "description": row.get('Description') or "",
-                    "author_name": row.get('AuthorName') or "Unknown Chef",
-                    "author_id": row['AuthorID'],
-                    "image_url": row.get('ImageURL'),
-                    "ingredients": row.get('Ingredients'),
-                    "instructions": row.get('Instructions'),
-                    "raw_ingredients": row.get('RawIngredients'),
-                    "servings": row.get('Servings'),
-                    "created_at": created_at_str,
-                    "likes_count": row.get('LikesCount') or 0,
-                    "is_liked": bool(row.get('IsLiked')),
-                    "is_favorited": bool(row.get('IsFavorited'))
-                }
-                all_recipes.append(recipe_dict)
-                
-            except Exception as e:
-                print(f"Error processing recipe row: {e}")
-                continue
+        print(f"Retrieved {len(all_recipes)} total recipes from database for user {user_id}")
         
         # Update cache with user-specific data
         cache.update_cache(all_recipes, user_id)
@@ -601,51 +324,31 @@ async def get_recipes(
     
 @router.post("/{recipe_id}/like")
 async def toggle_like_recipe(recipe_id: int, current_user: dict = Depends(verify_token)):
+    """Toggle like status on a recipe - optimized with single database transaction"""
     try:
         user_id = current_user['userid']
         
-        # Single transaction that checks recipe existence and toggles like
-        with get_database_cursor() as cursor:
-            # Check if recipe exists and current like status
-            cursor.execute("""
-                SELECT COUNT(*) as recipe_exists,
-                       CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = ? AND UserID = ?) 
-                            THEN 1 ELSE 0 END as is_liked
-                FROM Recipes 
-                WHERE RecipeID = ?
-            """, (recipe_id, user_id, recipe_id))
-            
-            result = cursor.fetchone()
-            
-            if not result or result.recipe_exists == 0:
-                raise HTTPException(status_code=404, detail="Recipe not found")
-            
-            is_currently_liked = bool(result.is_liked)
-            
-            # Toggle like in same transaction
-            if is_currently_liked:
-                cursor.execute("DELETE FROM Likes WHERE RecipeID = ? AND UserID = ?", 
-                              (recipe_id, user_id))
-                is_liked = False
-                action_type = "Unliked"
-            else:
-                cursor.execute("INSERT INTO Likes (RecipeID, UserID) VALUES (?, ?)", 
-                              (recipe_id, user_id))
-                is_liked = True
-                action_type = "Liked"
+        # Toggle like using model (optimized version with transaction)
+        result = Like.toggle_like_with_transaction(user_id, recipe_id)
         
-        # Log the like/unlike event
+        if "error" in result:
+            if result["error"] == "Recipe not found":
+                raise HTTPException(status_code=404, detail="Recipe not found")
+            else:
+                raise HTTPException(status_code=500, detail=result["error"])
+        
+        # Log the like/unlike event using model
         like_event_data = {
-            "previous_state": is_currently_liked,
-            "new_state": is_liked,
+            "previous_state": result["previous_state"],
+            "new_state": result["is_liked"],
             "timestamp": datetime.now().isoformat()
         }
-        log_recipe_event(recipe_id, user_id, action_type, like_event_data)
+        Recipe.log_recipe_event(recipe_id, user_id, result["action_type"], like_event_data)
         
         # Update cache
-        cache.update_like_status(recipe_id, user_id, is_liked)
+        cache.update_like_status(recipe_id, user_id, result["is_liked"])
         
-        return {"is_liked": is_liked, "recipe_id": recipe_id}
+        return {"is_liked": result["is_liked"], "recipe_id": recipe_id}
         
     except HTTPException:
         raise
@@ -659,69 +362,42 @@ async def toggle_favorite_recipe(
     current_user: dict = Depends(verify_token)
 ):
     """
-    Toggle favorite status - optimized with single database transaction
+    Toggle favorite status - using model methods
     """
     try:
         user_id = current_user['userid']
         print(f"Toggling favorite for recipe {recipe_id} by user {current_user['username']}")
         
-        # Use single database connection for entire operation
-        with get_database_cursor() as cursor:
-            # Check if recipe exists and get current favorite status in one query
-            cursor.execute("""
-                SELECT 
-                    (SELECT COUNT(*) FROM Recipes WHERE RecipeID = ?) as recipe_exists,
-                    CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = ? AND UserID = ?) 
-                         THEN 1 ELSE 0 END as is_currently_favorited
-            """, (recipe_id, recipe_id, user_id))
-            
-            result = cursor.fetchone()
-            
-            # Check if recipe exists
-            if not result or result[0] == 0:  # recipe_exists is first column
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Recipe not found"
-                )
-            
-            is_currently_favorited = bool(result[1])  # is_currently_favorited is second column
-            
-            # Toggle favorite status in same transaction
-            if is_currently_favorited:
-                # Remove favorite
-                cursor.execute(
-                    "DELETE FROM Favorites WHERE RecipeID = ? AND UserID = ?",
-                    (recipe_id, user_id)
-                )
-                is_favorited = False
-                action_type = "Unfavorited"
-                print(f"Removed favorite for recipe {recipe_id}")
-            else:
-                # Add favorite
-                cursor.execute(
-                    "INSERT INTO Favorites (RecipeID, UserID) VALUES (?, ?)",
-                    (recipe_id, user_id)
-                )
-                is_favorited = True
-                action_type = "Favorited"
-                print(f"Added favorite for recipe {recipe_id}")
-            
-            # Transaction automatically commits when exiting the 'with' block
+        # Check if recipe exists using model
+        if not Recipe.recipe_exists(recipe_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recipe not found"
+            )
         
-        # Log the favorite/unfavorite event
+        # Toggle favorite using model
+        result = Favorite.toggle_favorite(user_id, recipe_id)
+        
+        if "error" in result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=result["error"]
+            )
+        
+        # Log the favorite/unfavorite event using model
         favorite_event_data = {
-            "previous_state": is_currently_favorited,
-            "new_state": is_favorited,
+            "previous_state": result["previous_state"],
+            "new_state": result["is_favorited"],
             "timestamp": datetime.now().isoformat()
         }
-        log_recipe_event(recipe_id, user_id, action_type, favorite_event_data)
+        Recipe.log_recipe_event(recipe_id, user_id, result["action_type"], favorite_event_data)
         
         # Update cache efficiently
-        cache.update_favorite_status(recipe_id, user_id, is_favorited)
+        cache.update_favorite_status(recipe_id, user_id, result["is_favorited"])
         
-        print(f"Recipe {recipe_id} {'favorited' if is_favorited else 'unfavorited'} - cache updated")
+        print(f"Recipe {recipe_id} {'favorited' if result['is_favorited'] else 'unfavorited'} - cache updated")
         
-        return {"is_favorited": is_favorited, "recipe_id": recipe_id}
+        return {"is_favorited": result["is_favorited"], "recipe_id": recipe_id}
         
     except HTTPException:
         raise
@@ -741,13 +417,13 @@ async def clear_cache(current_user: dict = Depends(verify_token)):
     """
     user_id = current_user['userid']
     
-    # Log cache clear event
+    # Log cache clear event using model
     cache_event_data = {
         "action": "cache_cleared",
         "timestamp": datetime.now().isoformat(),
         "user_role": "admin"
     }
-    log_recipe_event(0, user_id, "CacheCleared", cache_event_data)
+    Recipe.log_recipe_event(0, user_id, "CacheCleared", cache_event_data)
     
     cache.invalidate()
     return {"message": "Cache cleared successfully"}
@@ -759,49 +435,15 @@ async def get_user_stats(current_user: dict = Depends(verify_token)):
         user_id = current_user['userid']
         print(f"Getting stats for user: {current_user['username']}")
         
-        # Log stats view event
+        # Log stats view event using model
         stats_event_data = {
             "stats_requested": ["recipes_created", "total_likes_received", "total_favorites_received", "recipes_liked", "recipes_favorited"],
             "timestamp": datetime.now().isoformat()
         }
-        log_recipe_event(0, user_id, "ViewedStats", stats_event_data)
+        Recipe.log_recipe_event(0, user_id, "ViewedStats", stats_event_data)
         
-        recipes_created = execute_scalar(
-            "SELECT COUNT(*) FROM Recipes WHERE AuthorID = ?",
-            (user_id,)
-        ) or 0
-        
-        total_likes_received = execute_scalar(
-            """SELECT COUNT(*) FROM Likes l
-               JOIN Recipes r ON l.RecipeID = r.RecipeID
-               WHERE r.AuthorID = ?""",
-            (user_id,)
-        ) or 0
-        
-        total_favorites_received = execute_scalar(
-            """SELECT COUNT(*) FROM Favorites f
-               JOIN Recipes r ON f.RecipeID = r.RecipeID
-               WHERE r.AuthorID = ?""",
-            (user_id,)
-        ) or 0
-        
-        recipes_liked = execute_scalar(
-            "SELECT COUNT(*) FROM Likes WHERE UserID = ?",
-            (user_id,)
-        ) or 0
-        
-        recipes_favorited = execute_scalar(
-            "SELECT COUNT(*) FROM Favorites WHERE UserID = ?",
-            (user_id,)
-        ) or 0
-        
-        stats = {
-            "recipes_created": recipes_created,
-            "total_likes_received": total_likes_received,
-            "total_favorites_received": total_favorites_received,
-            "recipes_liked": recipes_liked,
-            "recipes_favorited": recipes_favorited
-        }
+        # Get comprehensive stats using model
+        stats = User.get_comprehensive_user_stats(user_id)
         
         print(f"User stats: {stats}")
         return stats
@@ -825,79 +467,41 @@ async def get_recipe_by_id(
         user_id = current_user['userid']
         print(f"Getting recipe {recipe_id} for user: {current_user['username']} (ID: {user_id})")
         
-        # Log recipe view event
+        # Log recipe view event using model
         view_event_data = {
             "viewed_by": current_user['username'],
             "timestamp": datetime.now().isoformat(),
             "access_method": "direct_id"
         }
-        log_recipe_event(recipe_id, user_id, "Viewed", view_event_data)
+        Recipe.log_recipe_event(recipe_id, user_id, "Viewed", view_event_data)
         
-        # Query to get recipe with user-specific like/favorite status
-        query = """
-        SELECT 
-            r.RecipeID,
-            r.Title,
-            r.Description,
-            r.Ingredients,
-            r.Instructions,
-            r.ImageURL,
-            r.RawIngredients,
-            r.Servings,
-            r.CreatedAt,
-            r.AuthorID,
-            u.Username as AuthorName,
-            (SELECT COUNT(*) FROM Likes WHERE RecipeID = r.RecipeID) as LikesCount,
-            CASE WHEN EXISTS(SELECT 1 FROM Likes WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsLiked,
-            CASE WHEN EXISTS(SELECT 1 FROM Favorites WHERE RecipeID = r.RecipeID AND UserID = ?) 
-                 THEN 1 ELSE 0 END as IsFavorited
-        FROM Recipes r
-        JOIN Users u ON r.AuthorID = u.UserID
-        WHERE r.RecipeID = ?
-        """
+        # Get recipe with user interactions using model
+        recipe_data = Recipe.get_recipe_with_user_interactions(recipe_id, user_id)
         
-        # Execute query
-        recipe_data = execute_query(query, (user_id, user_id, recipe_id), fetch="one")
-        
-        if not recipe_data or len(recipe_data) == 0:
+        if not recipe_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Recipe with ID {recipe_id} not found"
             )
         
-        # Get the first (and only) result
-        row = recipe_data[0]
-        
-        print(f"Retrieved recipe: {row.get('Title', 'Untitled')}")
-        
-        # Format created_at
-        created_at_str = datetime.now().isoformat()
-        if row.get('CreatedAt'):
-            if isinstance(row['CreatedAt'], str):
-                created_at_str = row['CreatedAt']
-            else:
-                try:
-                    created_at_str = row['CreatedAt'].isoformat()
-                except:
-                    created_at_str = str(row['CreatedAt'])
+        print(f"Retrieved recipe: {recipe_data.get('title', 'Untitled')}")
         
         # Build response
         recipe_response = RecipeResponse(
-            recipe_id=row['RecipeID'],
-            title=row.get('Title') or "Untitled Recipe",
-            description=row.get('Description') or "",
-            author_name=row.get('AuthorName') or "Unknown Chef",
-            author_id=row['AuthorID'],
-            image_url=row.get('ImageURL'),
-            ingredients=row.get('Ingredients'),
-            instructions=row.get('Instructions'),
-            raw_ingredients=row.get('RawIngredients'),
-            servings=row.get('Servings'),
-            created_at=created_at_str,
-            likes_count=row.get('LikesCount') or 0,
-            is_liked=bool(row.get('IsLiked')),
-            is_favorited=bool(row.get('IsFavorited'))
+            recipe_id=recipe_data['recipe_id'],
+            title=recipe_data['title'],
+            description=recipe_data['description'],
+            author_name=recipe_data['author_name'],
+            author_id=recipe_data['author_id'],
+            image_url=recipe_data['image_url'],
+            ingredients=recipe_data['ingredients'],
+            instructions=recipe_data['instructions'],
+            raw_ingredients=recipe_data['raw_ingredients'],
+            servings=recipe_data['servings'],
+            created_at=recipe_data['created_at'],
+            likes_count=recipe_data['likes_count'],
+            is_liked=recipe_data['is_liked'],
+            is_favorited=recipe_data['is_favorited']
         )
         
         print(f"Returning recipe details for: {recipe_response.title}")

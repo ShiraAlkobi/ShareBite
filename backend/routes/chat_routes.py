@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from auth_routes import verify_token
 from services.rag_chat_service import RAGChatService
+from models.chat import Chat
 import requests
 import json
 
@@ -55,6 +56,16 @@ class ConversationHistoryResponse(BaseModel):
 #                 detail=result.get("error", "Failed to process chat message")
 #             )
         
+#         # Save conversation to database using Chat model
+#         Chat.save_conversation(
+#             user_id=user_id,
+#             message=chat_message.message.strip(),
+#             response=result["response"],
+#             search_intent=result["search_intent"],
+#             relevant_recipes_count=result["relevant_recipes_count"],
+#             recipe_ids=result["recipe_ids"]
+#         )
+        
 #         return ChatResponse(
 #             response=result["response"],
 #             relevant_recipes_count=result["relevant_recipes_count"],
@@ -83,7 +94,8 @@ async def get_chat_history(
     try:
         user_id = current_user['userid']
         
-        history = rag_service.get_conversation_history(user_id, limit)
+        # Use Chat model instead of rag_service
+        history = Chat.get_conversation_history(user_id, limit)
         
         return ConversationHistoryResponse(history=history)
         
@@ -102,10 +114,19 @@ async def clear_chat_history(current_user: dict = Depends(verify_token)):
     try:
         user_id = current_user['userid']
         
-        rag_service.clear_conversation_history(user_id)
+        # Use Chat model instead of rag_service
+        success = Chat.clear_conversation_history(user_id)
         
-        return {"message": "Conversation history cleared successfully"}
+        if success:
+            return {"message": "Conversation history cleared successfully"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to clear conversation history"
+            )
         
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error clearing chat history: {e}")
         raise HTTPException(
@@ -135,10 +156,55 @@ async def get_chat_service_status():
             "service_status": "unhealthy",
             "message": f"Service error: {str(e)}"
         }
-    
 
+@router.get("/statistics")
+async def get_chat_statistics(current_user: dict = Depends(verify_token)):
+    """
+    Get chat statistics for current user
+    """
+    try:
+        user_id = current_user['userid']
+        
+        # Use Chat model to get statistics
+        stats = Chat.get_chat_statistics(user_id)
+        
+        return {
+            "user_statistics": stats,
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"Error getting chat statistics: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get chat statistics"
+        )
 
-# Add this to your existing router
+@router.get("/analytics/popular-intents")
+async def get_popular_search_intents(
+    limit: int = 10,
+    current_user: dict = Depends(verify_token)
+):
+    """
+    Get popular search intents (admin/analytics endpoint)
+    """
+    try:
+        # Use Chat model to get popular search intents
+        intents = Chat.get_popular_search_intents(limit)
+        
+        return {
+            "popular_intents": intents,
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"Error getting popular search intents: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get popular search intents"
+        )
+
+# Recipe context chat functionality
 class RecipeContextChatRequest(BaseModel):
     message: str
     recipe_context: Dict[str, Any]
@@ -151,7 +217,12 @@ async def recipe_context_chat(
     chat_request: RecipeContextChatRequest,
     current_user: dict = Depends(verify_token)
 ):
+    """
+    Chat with AI about a specific recipe context
+    """
     try:
+        user_id = current_user['userid']
+        
         # Validate and truncate message
         message = chat_request.message.strip()[:200]  # Limit user message length
         
@@ -185,6 +256,17 @@ async def recipe_context_chat(
         if ollama_response.status_code == 200:
             ai_data = ollama_response.json()
             ai_response = ai_data.get("response", "Try rephrasing your question.").strip()
+            
+            # Save recipe-specific conversation using Chat model
+            Chat.save_conversation(
+                user_id=user_id,
+                message=message,
+                response=ai_response,
+                search_intent="recipe_context_chat",
+                relevant_recipes_count=1,
+                recipe_ids=[chat_request.recipe_context.get('recipe_id', 0)]
+            )
+            
             return SimpleChatResponse(response=ai_response)
         else:
             return SimpleChatResponse(response="AI is busy, please try again.")
@@ -192,6 +274,7 @@ async def recipe_context_chat(
     except requests.exceptions.Timeout:
         return SimpleChatResponse(response="Response timed out. Try a shorter question.")
     except Exception as e:
+        print(f"Error in recipe context chat: {e}")
         return SimpleChatResponse(response="Chat temporarily unavailable.")
 
 def create_optimized_recipe_prompt(message: str, recipe: Dict) -> str:
@@ -200,24 +283,3 @@ def create_optimized_recipe_prompt(message: str, recipe: Dict) -> str:
     ingredients = recipe.get('ingredients', '')[:100]
     
     return f"Recipe: {title}\nIngredients: {ingredients}\nQ: {message}\nA:"
-
-# def create_recipe_focused_prompt(user_message: str, recipe_context: Dict[str, Any]) -> str:
-#     """Create a very concise prompt for fast responses"""
-    
-#     # Extract only essential recipe data
-#     title = recipe_context.get('title', 'Unknown Recipe')
-#     ingredients = recipe_context.get('ingredients', 'No ingredients')[:200]  # Limit length
-#     instructions = recipe_context.get('instructions', 'No instructions')[:300]  # Limit length
-    
-#     # Create ultra-concise prompt for speed
-#     prompt = f"""Recipe: {title}
-
-# Ingredients: {ingredients}
-
-# Instructions: {instructions}
-
-# Question: {user_message}
-
-# Answer briefly and directly:"""
-    
-#     return prompt

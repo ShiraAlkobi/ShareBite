@@ -1,3 +1,10 @@
+"""
+Add Recipe Routes - Controller Layer for ShareBite backend
+
+This module provides recipe creation endpoints following MVC architecture.
+Controllers handle requests and coordinate with models to return responses.
+"""
+
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional
@@ -7,45 +14,16 @@ from pathlib import Path
 import uuid
 from pydantic import BaseModel
 from datetime import datetime
-import json
 
-# Import your CQRS commands and queries
-from commands.recipes_commands import CreateRecipeCommand, AddTagToRecipeCommand, RemoveTagFromRecipeCommand
-from queries.recipes_queries import SearchRecipesQuery, GetRecipeByIdQuery
-from queries.tags_queries import GetAllTagsQuery, SearchTagsQuery, GetPopularTagsQuery
-from database import execute_query, execute_scalar, execute_non_query
+# Import models
+from models.recipe import Recipe
+from models.tag import Tag
+from models.user import User
+
+# Import auth
 from auth_routes import verify_token
 
-
 router = APIRouter()
-
-# ============= EVENT SOURCING HELPER =============
-def log_recipe_event(recipe_id: int, user_id: int, action_type: str, event_data: dict = None):
-    """
-    Log an event to the RecipeEvents table for event sourcing
-    
-    Args:
-        recipe_id (int): ID of the recipe involved
-        user_id (int): ID of the user performing the action
-        action_type (str): Type of action (Created, TagAdded, TagRemoved, ImageUploaded)
-        event_data (Dict): Additional data to store as JSON
-    """
-    try:
-        # Convert event_data to JSON string if provided
-        event_data_json = json.dumps(event_data) if event_data else None
-        
-        # Insert event into RecipeEvents table
-        execute_non_query(
-            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
-               VALUES (?, ?, ?, ?)""",
-            (recipe_id, user_id, action_type, event_data_json)
-        )
-        
-        print(f"Event logged: {action_type} - Recipe {recipe_id} by User {user_id}")
-        
-    except Exception as e:
-        print(f"Failed to log event: {e}")
-        # Don't raise exception - event logging failure shouldn't break the main operation
 
 # Pydantic models for request/response
 class CreateRecipeRequest(BaseModel):
@@ -73,33 +51,40 @@ async def upload_recipe_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(verify_token)
 ):
+    """Upload recipe image - NOTE: This endpoint references cloudinary_gateway which needs to be implemented"""
     try:
         user_id = current_user["userid"]
         
-        # UPDATED: Use Cloudinary Gateway instead of local storage
-        upload_result = await cloudinary_gateway.upload_recipe_image(
-            file=file, 
-            user_id=user_id, 
-            recipe_id=None  # No recipe_id yet since this is pre-upload
-        )
+        # NOTE: The original code references cloudinary_gateway which is not available
+        # This is a placeholder implementation that should be replaced with actual image upload logic
         
-        # Log image upload event with Cloudinary metadata
+        # For now, save locally (this should be replaced with your image upload service)
+        upload_dir = Path("static/recipe_images")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        file_extension = Path(file.filename).suffix
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        file_path = upload_dir / unique_filename
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        # Construct URL (adjust based on your server setup)
+        image_url = f"/static/recipe_images/{unique_filename}"
+        
+        # Log image upload event using model
         upload_event_data = {
             "original_filename": file.filename,
-            "cloudinary_public_id": upload_result["public_id"],
-            "cloudinary_url": upload_result["url"],
-            "file_size_bytes": upload_result["bytes"],
+            "saved_filename": unique_filename,
+            "file_size_bytes": file_path.stat().st_size,
             "file_type": file.content_type,
-            "image_dimensions": {
-                "width": upload_result["width"],
-                "height": upload_result["height"]
-            },
-            "image_format": upload_result["format"],
             "uploaded_by": current_user["username"],
             "upload_method": "local_storage",
             "timestamp": datetime.now().isoformat()
         }
-        log_recipe_event(0, user_id, "ImageUploaded", upload_event_data)
+        Recipe.log_recipe_event(0, user_id, "ImageUploaded", upload_event_data)
         
         print(f"Image uploaded successfully (local): {image_url}")
         return {"image_url": image_url}
@@ -114,9 +99,8 @@ async def upload_recipe_image(
 async def get_all_tags():
     """Get all available tags for recipes - READ ONLY (no event logging)"""
     try:
-        # Use your CQRS query pattern
-        query = GetAllTagsQuery()
-        tags_result = query.execute(order_by="usage")
+        # Use model method (replaces CQRS query)
+        tags_result = Tag.get_all_with_usage_count(order_by="usage")
         
         tags = []
         for row in tags_result:
@@ -139,9 +123,8 @@ async def search_tags(q: str):
             # Return popular tags if no query
             return await get_common_tags()
         
-        # Use your CQRS SearchTagsQuery
-        query = SearchTagsQuery()
-        tags_result = query.execute(search_term=q, limit=20)
+        # Use model method (replaces CQRS SearchTagsQuery)
+        tags_result = Tag.search_tags(search_term=q, limit=20)
         
         tags = []
         for row in tags_result:
@@ -160,9 +143,8 @@ async def search_tags(q: str):
 async def get_common_tags():
     """Get most commonly used tags - READ ONLY (no event logging)"""
     try:
-        # Use your CQRS GetPopularTagsQuery
-        query = GetPopularTagsQuery()
-        tags_result = query.execute(limit=20, min_usage=1)
+        # Use model method (replaces CQRS GetPopularTagsQuery)
+        tags_result = Tag.get_popular_tags(limit=20, min_usage=1)
         
         tags = []
         if tags_result:
@@ -173,36 +155,28 @@ async def get_common_tags():
                 })
         else:
             # Fallback to predefined common tags if database is empty
-            common_tags = [
-                "vegetarian", "vegan", "gluten-free", "dairy-free", "keto",
-                "quick", "easy", "healthy", "comfort-food", "dessert",
-                "breakfast", "lunch", "dinner", "snack", "appetizer",
-                "main-course", "side-dish", "soup", "salad", "pasta"
-            ]
-            tags = [{"tag_name": tag, "usage_count": 0} for tag in common_tags]
+            tags = Tag.get_common_tags_fallback()
         
         return {"tags": tags}
         
     except Exception as e:
         print(f"Error getting common tags: {e}")
-        # Return fallback tags
-        fallback_tags = ["vegetarian", "quick", "easy", "healthy", "dessert"]
-        return {"tags": [{"tag_name": tag, "usage_count": 0} for tag in fallback_tags]}
+        # Return fallback tags using model
+        fallback_tags = Tag.get_common_tags_fallback()
+        return {"tags": fallback_tags[:5]}  # Return first 5 as emergency fallback
 
 @router.post("/recipes", response_model=RecipeResponse, status_code=201)
 async def create_recipe(
     recipe_data: CreateRecipeRequest,
     current_user: dict = Depends(verify_token)
 ):
-    """Create a new recipe using CQRS command - LOGS Created EVENT"""
+    """Create a new recipe - LOGS Created EVENT"""
     try:
         user_id = current_user["userid"]
         print(f"Creating recipe: {recipe_data.title}")
         
-        # Use your existing CreateRecipeCommand
-        command = CreateRecipeCommand()
-        
-        recipe_id = command.execute(
+        # Use model method (replaces CQRS CreateRecipeCommand)
+        recipe_id = Recipe.create_recipe_with_tags(
             author_id=user_id,
             title=recipe_data.title,
             description=recipe_data.description,
@@ -214,7 +188,7 @@ async def create_recipe(
             tags=recipe_data.tags or []
         )
         
-        # Log recipe creation event
+        # Log recipe creation event using model
         creation_event_data = {
             "title": recipe_data.title,
             "description_length": len(recipe_data.description or ""),
@@ -227,7 +201,7 @@ async def create_recipe(
             "created_by": current_user["username"],
             "timestamp": datetime.now().isoformat()
         }
-        log_recipe_event(recipe_id, user_id, "Created", creation_event_data)
+        Recipe.log_recipe_event(recipe_id, user_id, "Created", creation_event_data)
         
         return RecipeResponse(
             recipe_id=recipe_id,
@@ -250,22 +224,22 @@ async def add_tag_to_recipe(
     try:
         user_id = current_user["userid"]
         
-        command = AddTagToRecipeCommand()
-        success = command.execute(
+        # Use model method (replaces CQRS AddTagToRecipeCommand)
+        success = Recipe.add_tag_to_recipe(
             recipe_id=recipe_id,
             tag_name=tag_name,
             author_id=user_id
         )
         
         if success:
-            # Log tag addition event
+            # Log tag addition event using model
             tag_event_data = {
                 "tag_name": tag_name.strip().lower(),
                 "recipe_id": recipe_id,
                 "added_by": current_user["username"],
                 "timestamp": datetime.now().isoformat()
             }
-            log_recipe_event(recipe_id, user_id, "TagAdded", tag_event_data)
+            Recipe.log_recipe_event(recipe_id, user_id, "TagAdded", tag_event_data)
             
             return {"message": f"Tag '{tag_name}' added to recipe"}
         else:
@@ -287,22 +261,22 @@ async def remove_tag_from_recipe(
     try:
         user_id = current_user["userid"]
         
-        command = RemoveTagFromRecipeCommand()
-        success = command.execute(
+        # Use model method (replaces CQRS RemoveTagFromRecipeCommand)
+        success = Recipe.remove_tag_from_recipe(
             recipe_id=recipe_id,
             tag_name=tag_name,
             author_id=user_id
         )
         
         if success:
-            # Log tag removal event
+            # Log tag removal event using model
             tag_event_data = {
                 "tag_name": tag_name.strip().lower(),
                 "recipe_id": recipe_id,
                 "removed_by": current_user["username"],
                 "timestamp": datetime.now().isoformat()
             }
-            log_recipe_event(recipe_id, user_id, "TagRemoved", tag_event_data)
+            Recipe.log_recipe_event(recipe_id, user_id, "TagRemoved", tag_event_data)
             
             return {"message": f"Tag '{tag_name}' removed from recipe"}
         else:
