@@ -3,11 +3,54 @@ from PySide6.QtWidgets import (
     QPushButton, QFrame, QScrollArea, QGridLayout, QComboBox,
     QSpacerItem, QSizePolicy, QTextEdit
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtCore import Qt, Signal, QTimer, QThread, QObject
+from PySide6.QtGui import QFont, QColor, QPixmap
+from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 from typing import List, Dict, Any
 from models.home_model import RecipeData
 from models.login_model import UserData
+import requests
+from io import BytesIO
+
+class ImageLoader(QObject):
+    """Worker class for loading images asynchronously"""
+    image_loaded = Signal(QPixmap)
+    image_failed = Signal()
+    
+    def __init__(self, image_url: str, size: tuple = (140, 140)):
+        super().__init__()
+        self.image_url = image_url
+        self.target_size = size
+    
+    def load_image(self):
+        """Load image from URL"""
+        try:
+            response = requests.get(self.image_url, timeout=10, stream=True)
+            if response.status_code == 200:
+                # Read image data
+                image_data = BytesIO()
+                for chunk in response.iter_content(chunk_size=8192):
+                    image_data.write(chunk)
+                image_data.seek(0)
+                
+                # Create QPixmap from image data
+                pixmap = QPixmap()
+                if pixmap.loadFromData(image_data.getvalue()):
+                    # Scale image to fit container while maintaining aspect ratio
+                    scaled_pixmap = pixmap.scaled(
+                        self.target_size[0], 
+                        self.target_size[1], 
+                        Qt.KeepAspectRatio, 
+                        Qt.SmoothTransformation
+                    )
+                    self.image_loaded.emit(scaled_pixmap)
+                    return
+            
+            self.image_failed.emit()
+            
+        except Exception as e:
+            print(f"Error loading image from {self.image_url}: {e}")
+            self.image_failed.emit()
 
 class RecipeCard(QFrame):
     """Individual recipe card widget displaying dish name, image, date, and author"""
@@ -20,6 +63,8 @@ class RecipeCard(QFrame):
         super().__init__(parent)
         self.recipe = recipe
         self.setObjectName("RecipeCard")
+        self.image_loader_thread = None
+        self.image_loader = None
         self.setup_ui()
 
     def setup_ui(self):
@@ -40,15 +85,20 @@ class RecipeCard(QFrame):
         image_layout.setContentsMargins(0, 0, 0, 0)
         image_layout.setAlignment(Qt.AlignCenter)
 
-        if self.recipe.image_url:
-            image_label = QLabel("🍽️")
-            image_label.setObjectName("RecipeImagePlaceholder")
-        else:
-            image_label = QLabel("📸")
-            image_label.setObjectName("RecipeImagePlaceholder")
+        # Image label - will be updated with actual image or placeholder
+        self.image_label = QLabel()
+        self.image_label.setObjectName("RecipeImage")
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_label.setFixedSize(140, 140)
+        self.image_label.setScaledContents(False)  # We'll handle scaling manually
         
-        image_label.setAlignment(Qt.AlignCenter)
-        image_layout.addWidget(image_label)
+        # Load image if URL is available
+        if self.recipe.image_url and self.recipe.image_url.strip():
+            self.load_recipe_image()
+        else:
+            self.show_placeholder_image()
+        
+        image_layout.addWidget(self.image_label)
 
         # Content container
         content_container = QFrame()
@@ -120,6 +170,66 @@ class RecipeCard(QFrame):
         layout.addWidget(image_container)
         layout.addWidget(content_container)
     
+    def load_recipe_image(self):
+        """Load recipe image from URL asynchronously"""
+        try:
+            # Show loading placeholder
+            self.image_label.setText("🔄")
+            self.image_label.setStyleSheet("font-size: 24px; color: #666;")
+            
+            # Create thread and worker for image loading
+            self.image_loader_thread = QThread()
+            self.image_loader = ImageLoader(self.recipe.image_url, (140, 140))
+            
+            # Move worker to thread
+            self.image_loader.moveToThread(self.image_loader_thread)
+            
+            # Connect signals
+            self.image_loader_thread.started.connect(self.image_loader.load_image)
+            self.image_loader.image_loaded.connect(self.on_image_loaded)
+            self.image_loader.image_failed.connect(self.on_image_failed)
+            
+            # Clean up thread when done
+            self.image_loader.image_loaded.connect(self.image_loader_thread.quit)
+            self.image_loader.image_failed.connect(self.image_loader_thread.quit)
+            self.image_loader_thread.finished.connect(self.image_loader.deleteLater)
+            self.image_loader_thread.finished.connect(self.image_loader_thread.deleteLater)
+            
+            # Start loading
+            self.image_loader_thread.start()
+            
+        except Exception as e:
+            print(f"Error setting up image loading: {e}")
+            self.show_placeholder_image()
+    
+    def on_image_loaded(self, pixmap: QPixmap):
+        """Handle successful image loading"""
+        try:
+            self.image_label.clear()
+            self.image_label.setStyleSheet("")  # Clear loading styles
+            self.image_label.setPixmap(pixmap)
+            print(f"Successfully loaded image for recipe: {self.recipe.title}")
+        except Exception as e:
+            print(f"Error displaying loaded image: {e}")
+            self.show_placeholder_image()
+    
+    def on_image_failed(self):
+        """Handle failed image loading"""
+        print(f"Failed to load image for recipe: {self.recipe.title}")
+        self.show_placeholder_image()
+    
+    def show_placeholder_image(self):
+        """Show placeholder when no image is available or loading failed"""
+        self.image_label.clear()
+        self.image_label.setText("🍽️")
+        self.image_label.setStyleSheet("""
+            font-size: 48px;
+            color: #888;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        """)
+    
     def update_like_status(self, is_liked: bool, likes_count: int):
         """Update like button status"""
         self.recipe.is_liked = is_liked
@@ -139,6 +249,12 @@ class RecipeCard(QFrame):
         self.favorite_button.setProperty("favorited", str(is_favorited).lower())
         self.favorite_button.style().unpolish(self.favorite_button)
         self.favorite_button.style().polish(self.favorite_button)
+    
+    def cleanup(self):
+        """Clean up resources when card is destroyed"""
+        if self.image_loader_thread and self.image_loader_thread.isRunning():
+            self.image_loader_thread.quit()
+            self.image_loader_thread.wait(1000)  # Wait up to 1 second
 
 class SearchBar(QFrame):
     """Modern compact search bar widget with filters"""
@@ -387,6 +503,30 @@ class HomeView(QWidget):
         
         content_layout.addWidget(self.recipe_container)
     
+    def setup_loading_overlay(self):
+        """Setup compact loading indicator"""
+        self.loading_indicator = QFrame(self)
+        self.loading_indicator.setObjectName("LoadingIndicator")
+        self.loading_indicator.setFixedSize(60, 60)
+        
+        indicator_layout = QVBoxLayout(self.loading_indicator)
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.setContentsMargins(0, 0, 0, 0)
+        
+        loading_icon = QLabel("🍳")
+        loading_icon.setObjectName("LoadingIcon")
+        loading_icon.setAlignment(Qt.AlignCenter)
+        
+        indicator_layout.addWidget(loading_icon)
+        
+        self.loading_indicator.hide()
+        
+        # Create animation timer for spinning effect
+        self.loading_timer = QTimer()
+        self.loading_timer.timeout.connect(self.animate_loading)
+        self.loading_icons = ["🍳", "👨‍🍳", "🥘", "🍽️"]
+        self.loading_index = 0
+    
     def setup_connections(self):
         """Setup signal connections"""
         self.search_bar.search_requested.connect(self.search_requested.emit)
@@ -500,6 +640,15 @@ class HomeView(QWidget):
         self.display_recipes(recipes)
         self.content_title.setText(f"'{query}' ({len(recipes)})")
     
+    def animate_loading(self):
+        """Animate the loading indicator"""
+        if hasattr(self, 'loading_indicator') and self.loading_indicator.isVisible():
+            loading_icon = self.loading_indicator.findChild(QLabel, "LoadingIcon")
+            if loading_icon:
+                self.loading_index = (self.loading_index + 1) % len(self.loading_icons)
+                loading_icon.setText(self.loading_icons[self.loading_index])
+
+    
     def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for specific recipe card with optional likes count"""
         if recipe_id in self.recipe_cards:
@@ -524,8 +673,10 @@ class HomeView(QWidget):
             card.update_favorite_status(is_favorited)
     
     def clear_recipe_grid(self):
-        """Clear all recipe cards from grid"""
+        """Clear all recipe cards from grid with proper cleanup"""
         for card in self.recipe_cards.values():
+            # Clean up image loading threads
+            card.cleanup()
             self.recipe_layout.removeWidget(card)
             card.deleteLater()
         self.recipe_cards.clear()

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id , get_database_cursor
 import sys
 import os
+import json
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from models.recipe import Recipe
@@ -15,6 +16,34 @@ from routes.auth_routes import SECRET_KEY
 print(f"Recipe routes using SECRET_KEY: {SECRET_KEY[:10]}...")
 
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
+
+# ============= EVENT SOURCING HELPER =============
+def log_recipe_event(recipe_id: int, user_id: int, action_type: str, event_data: Dict = None):
+    """
+    Log an event to the RecipeEvents table for event sourcing
+    
+    Args:
+        recipe_id (int): ID of the recipe involved
+        user_id (int): ID of the user performing the action
+        action_type (str): Type of action (Created, Updated, Liked, Unliked, Favorited, Unfavorited, Deleted)
+        event_data (Dict): Additional data to store as JSON
+    """
+    try:
+        # Convert event_data to JSON string if provided
+        event_data_json = json.dumps(event_data) if event_data else None
+        
+        # Insert event into RecipeEvents table
+        execute_non_query(
+            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
+               VALUES (?, ?, ?, ?)""",
+            (recipe_id, user_id, action_type, event_data_json)
+        )
+        
+        print(f"📝 Event logged: {action_type} - Recipe {recipe_id} by User {user_id}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to log event: {e}")
+        # Don't raise exception - event logging failure shouldn't break the main operation
 
 # ============= CACHE IMPLEMENTATION =============
 class RecipeCache:
@@ -151,7 +180,7 @@ class RecipeCache:
         else:
             print(f"Cache not invalidated - belongs to user {self.current_user_id}, not {user_id}")
 
-# יצירת מטמון גלובלי
+# Create global cache instance
 cache = RecipeCache()
 
 # ============= PYDANTIC MODELS =============
@@ -176,11 +205,9 @@ class RecipeListResponse(BaseModel):
     total_count: int
     limit: int
     offset: int
-    from_cache: bool = False  # נוסיף אינדיקציה אם הנתונים מהמטמון
+    from_cache: bool = False
 
 # ============= ENDPOINTS =============
-# IMPORTANT: Add this route BEFORE the /{recipe_id} route in your recipe_routes.py file
-# FastAPI matches routes in order, so more specific paths must come before parameterized ones
 
 @router.get("/search", response_model=RecipeListResponse)
 async def search_recipes(
@@ -199,6 +226,17 @@ async def search_recipes(
         user_id = current_user['userid']
         print(f"Searching recipes for user: {current_user['username']} (ID: {user_id})")
         print(f"Query: '{q}', Category: {category}, Author: {author}")
+        
+        # Log search event
+        search_event_data = {
+            "search_query": q,
+            "category": category,
+            "author": author,
+            "limit": limit,
+            "offset": offset
+        }
+        # Note: For search, we use recipe_id = 0 since it's not a specific recipe action
+        log_recipe_event(0, user_id, "Searched", search_event_data)
         
         # Build search query with user-specific like/favorite status
         base_query = """
@@ -270,8 +308,6 @@ async def search_recipes(
         
         # Category filter (if provided)
         if category and category.lower() != "all":
-            # Assuming you have a category field or want to search in description/title for category
-            # You might want to add a Category column to your Recipes table for better filtering
             category_condition = """
             (LOWER(r.Title) LIKE LOWER(?) 
              OR LOWER(r.Description) LIKE LOWER(?))
@@ -444,6 +480,15 @@ async def get_recipes(
         user_id = current_user['userid']
         print(f"Getting recipes for user: {current_user['username']} (ID: {user_id}) (limit: {limit}, offset: {offset})")
         
+        # Log view event (only if not from cache and not forced refresh)
+        if force_refresh or not cache.is_user_valid(user_id):
+            view_event_data = {
+                "limit": limit,
+                "offset": offset,
+                "force_refresh": force_refresh
+            }
+            log_recipe_event(0, user_id, "ViewedList", view_event_data)
+        
         # Check if we need to refresh due to user change or force refresh
         if not force_refresh:
             cached_recipes = cache.get_recipes(user_id, limit, offset)
@@ -582,10 +627,20 @@ async def toggle_like_recipe(recipe_id: int, current_user: dict = Depends(verify
                 cursor.execute("DELETE FROM Likes WHERE RecipeID = ? AND UserID = ?", 
                               (recipe_id, user_id))
                 is_liked = False
+                action_type = "Unliked"
             else:
                 cursor.execute("INSERT INTO Likes (RecipeID, UserID) VALUES (?, ?)", 
                               (recipe_id, user_id))
                 is_liked = True
+                action_type = "Liked"
+        
+        # Log the like/unlike event
+        like_event_data = {
+            "previous_state": is_currently_liked,
+            "new_state": is_liked,
+            "timestamp": datetime.now().isoformat()
+        }
+        log_recipe_event(recipe_id, user_id, action_type, like_event_data)
         
         # Update cache
         cache.update_like_status(recipe_id, user_id, is_liked)
@@ -595,6 +650,7 @@ async def toggle_like_recipe(recipe_id: int, current_user: dict = Depends(verify
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error toggling like: {e}")
         raise HTTPException(status_code=500, detail="Failed to toggle like")
         
 @router.post("/{recipe_id}/favorite")
@@ -638,6 +694,7 @@ async def toggle_favorite_recipe(
                     (recipe_id, user_id)
                 )
                 is_favorited = False
+                action_type = "Unfavorited"
                 print(f"Removed favorite for recipe {recipe_id}")
             else:
                 # Add favorite
@@ -646,9 +703,18 @@ async def toggle_favorite_recipe(
                     (recipe_id, user_id)
                 )
                 is_favorited = True
+                action_type = "Favorited"
                 print(f"Added favorite for recipe {recipe_id}")
             
             # Transaction automatically commits when exiting the 'with' block
+        
+        # Log the favorite/unfavorite event
+        favorite_event_data = {
+            "previous_state": is_currently_favorited,
+            "new_state": is_favorited,
+            "timestamp": datetime.now().isoformat()
+        }
+        log_recipe_event(recipe_id, user_id, action_type, favorite_event_data)
         
         # Update cache efficiently
         cache.update_favorite_status(recipe_id, user_id, is_favorited)
@@ -673,17 +739,32 @@ async def clear_cache(current_user: dict = Depends(verify_token)):
     """
     Clear the cache manually (admin function)
     """
+    user_id = current_user['userid']
+    
+    # Log cache clear event
+    cache_event_data = {
+        "action": "cache_cleared",
+        "timestamp": datetime.now().isoformat(),
+        "user_role": "admin"
+    }
+    log_recipe_event(0, user_id, "CacheCleared", cache_event_data)
+    
     cache.invalidate()
     return {"message": "Cache cleared successfully"}
 
-# שאר הפונקציות נשארות כמו שהן...
 @router.get("/user/stats")
 async def get_user_stats(current_user: dict = Depends(verify_token)):
     """Get current user's recipe statistics"""
     try:
-        print(f"📊 Getting stats for user: {current_user['username']}")
-        
         user_id = current_user['userid']
+        print(f"Getting stats for user: {current_user['username']}")
+        
+        # Log stats view event
+        stats_event_data = {
+            "stats_requested": ["recipes_created", "total_likes_received", "total_favorites_received", "recipes_liked", "recipes_favorited"],
+            "timestamp": datetime.now().isoformat()
+        }
+        log_recipe_event(0, user_id, "ViewedStats", stats_event_data)
         
         recipes_created = execute_scalar(
             "SELECT COUNT(*) FROM Recipes WHERE AuthorID = ?",
@@ -722,7 +803,7 @@ async def get_user_stats(current_user: dict = Depends(verify_token)):
             "recipes_favorited": recipes_favorited
         }
         
-        print(f"✅ User stats: {stats}")
+        print(f"User stats: {stats}")
         return stats
         
     except Exception as e:
@@ -731,7 +812,6 @@ async def get_user_stats(current_user: dict = Depends(verify_token)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get user statistics"
         )
-    # Add this to your recipe_routes.py file
 
 @router.get("/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe_by_id(
@@ -744,6 +824,14 @@ async def get_recipe_by_id(
     try:
         user_id = current_user['userid']
         print(f"Getting recipe {recipe_id} for user: {current_user['username']} (ID: {user_id})")
+        
+        # Log recipe view event
+        view_event_data = {
+            "viewed_by": current_user['username'],
+            "timestamp": datetime.now().isoformat(),
+            "access_method": "direct_id"
+        }
+        log_recipe_event(recipe_id, user_id, "Viewed", view_event_data)
         
         # Query to get recipe with user-specific like/favorite status
         query = """
@@ -825,4 +913,3 @@ async def get_recipe_by_id(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve recipe: {str(e)}"
         )
-    

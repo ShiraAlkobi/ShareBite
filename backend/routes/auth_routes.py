@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, Dict
 import jwt
 from datetime import datetime, timedelta
 import os
 import hashlib
+import json
 
 # Import database functions directly
 from database import execute_query, execute_non_query, execute_scalar, insert_and_get_id
@@ -17,6 +18,34 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 security = HTTPBearer()
+
+# ============= EVENT SOURCING HELPER =============
+def log_user_event(user_id: int, action_type: str, event_data: Dict = None):
+    """
+    Log a user event to the RecipeEvents table for event sourcing
+    Note: We use recipe_id = 0 for user-related events since it's not recipe-specific
+    
+    Args:
+        user_id (int): ID of the user performing the action
+        action_type (str): Type of action (UserRegistered, UserLoggedIn, UserLoggedOut, etc.)
+        event_data (Dict): Additional data to store as JSON
+    """
+    try:
+        # Convert event_data to JSON string if provided
+        event_data_json = json.dumps(event_data) if event_data else None
+        
+        # Insert event into RecipeEvents table (using RecipeID = 0 for user events)
+        execute_non_query(
+            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
+               VALUES (?, ?, ?, ?)""",
+            (0, user_id, action_type, event_data_json)
+        )
+        
+        print(f"🔍 User event logged: {action_type} - User {user_id}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to log user event: {e}")
+        # Don't raise exception - event logging failure shouldn't break the main operation
 
 # Pydantic models for request/response
 class LoginRequest(BaseModel):
@@ -49,7 +78,7 @@ def create_password_hash(password: str) -> str:
         password = str(password)
     
     hash_result = hashlib.sha256(password.encode()).hexdigest()
-    print(f"🔐 Hash function: input='{password}' -> output='{hash_result[:20]}...'")
+    print(f"🔒 Hash function: input='{password}' -> output='{hash_result[:20]}...'")
     return hash_result
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -249,10 +278,10 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 @router.post("/login", response_model=AuthResponse)
 async def login(login_data: LoginRequest):
     """
-    Authenticate user and return access token
+    Authenticate user and return access token - LOGS UserLoggedIn EVENT
     """
     try:
-        print(f"🔐 Login attempt for username: {login_data.username}")
+        print(f"🔍 Login attempt for username: {login_data.username}")
         
         # Get user by username
         user = get_user_by_username(login_data.username)
@@ -286,6 +315,16 @@ async def login(login_data: LoginRequest):
             data={"sub": int(user['userid'])}, expires_delta=access_token_expires
         )
         
+        # Log user login event
+        login_event_data = {
+            "username": user['username'],
+            "email": user['email'],
+            "login_timestamp": datetime.now().isoformat(),
+            "token_expires_at": (datetime.now() + access_token_expires).isoformat(),
+            "login_method": "username_password"
+        }
+        log_user_event(user['userid'], "UserLoggedIn", login_event_data)
+        
         # Prepare user data for response (exclude password hash)
         user_data = {
             "userid": int(user['userid']),
@@ -317,11 +356,11 @@ async def login(login_data: LoginRequest):
 @router.post("/register", response_model=AuthResponse)
 async def register(register_data: RegisterRequest):
     """
-    Register new user
+    Register new user - LOGS UserRegistered EVENT
     """
     try:
-        print(f"📝 Registration attempt for username: {register_data.username}")
-        print(f"📝 Registration email: {register_data.email}")
+        print(f"🔍 Registration attempt for username: {register_data.username}")
+        print(f"🔍 Registration email: {register_data.email}")
         
         # Check if username already exists
         print(f"🔍 Checking if username exists: {register_data.username}")
@@ -344,10 +383,10 @@ async def register(register_data: RegisterRequest):
             )
         
         # Create password hash
-        print(f"🔐 Creating password hash for password: {'*' * len(register_data.password)}")
+        print(f"🔍 Creating password hash for password: {'*' * len(register_data.password)}")
         password_hash = create_password_hash(register_data.password)
-        print(f"🔐 Generated password hash: {password_hash}")
-        print(f"🔐 Password hash length: {len(password_hash)}")
+        print(f"🔍 Generated password hash: {password_hash}")
+        print(f"🔍 Password hash length: {len(password_hash)}")
         
         # Clean bio field - handle None and empty strings
         bio_value = None
@@ -408,8 +447,18 @@ async def register(register_data: RegisterRequest):
                 detail=f"Database error: {str(db_error)}"
             )
         
+        # Log user registration event
+        registration_event_data = {
+            "username": register_data.username,
+            "email": str(register_data.email),
+            "has_bio": bio_value is not None,
+            "registration_timestamp": datetime.now().isoformat(),
+            "registration_method": "direct_signup"
+        }
+        log_user_event(user_id, "UserRegistered", registration_event_data)
+        
         # Create access token
-        print(f"🔐 Creating access token for user ID: {user_id}")
+        print(f"🔍 Creating access token for user ID: {user_id}")
         try:
             access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
             access_token = create_access_token(
@@ -482,7 +531,7 @@ async def register(register_data: RegisterRequest):
 @router.get("/me", response_model=UserResponse)
 async def get_current_user(current_user: dict = Depends(verify_token)):
     """
-    Get current authenticated user
+    Get current authenticated user - READ ONLY (no event logging)
     """
     return UserResponse(
         userid=current_user['userid'],
@@ -496,6 +545,20 @@ async def get_current_user(current_user: dict = Depends(verify_token)):
 @router.post("/logout")
 async def logout(current_user: dict = Depends(verify_token)):
     """
-    Logout user (in a real app, you might want to blacklist the token)
+    Logout user - LOGS UserLoggedOut EVENT
     """
-    return {"message": "Successfully logged out"}
+    try:
+        # Log user logout event
+        logout_event_data = {
+            "username": current_user['username'],
+            "logout_timestamp": datetime.now().isoformat(),
+            "logout_method": "explicit_logout"
+        }
+        log_user_event(current_user['userid'], "UserLoggedOut", logout_event_data)
+        
+        return {"message": "Successfully logged out"}
+        
+    except Exception as e:
+        print(f"❌ Logout error: {e}")
+        # Still return success message even if event logging fails
+        return {"message": "Successfully logged out"}

@@ -2,10 +2,39 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from routes.auth_routes import verify_token
-from database import execute_query, execute_scalar
+from database import execute_query, execute_scalar, execute_non_query
 from datetime import datetime
+import json
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
+
+# ============= EVENT SOURCING HELPER =============
+def log_analytics_event(user_id: int, action_type: str, event_data: dict = None):
+    """
+    Log an analytics event to the RecipeEvents table for event sourcing
+    Note: We use recipe_id = 0 for analytics-related events since they're not recipe-specific
+    
+    Args:
+        user_id (int): ID of the user performing the action
+        action_type (str): Type of action (AnalyticsViewed, etc.)
+        event_data (Dict): Additional data to store as JSON
+    """
+    try:
+        # Convert event_data to JSON string if provided
+        event_data_json = json.dumps(event_data) if event_data else None
+        
+        # Insert event into RecipeEvents table (using RecipeID = 0 for analytics events)
+        execute_non_query(
+            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
+               VALUES (?, ?, ?, ?)""",
+            (0, user_id, action_type, event_data_json)
+        )
+        
+        print(f"Analytics event logged: {action_type} - User {user_id}")
+        
+    except Exception as e:
+        print(f"Failed to log analytics event: {e}")
+        # Don't raise exception - event logging failure shouldn't break the main operation
 
 class TagAnalyticsData(BaseModel):
     tag_name: str
@@ -30,9 +59,7 @@ async def get_user_analytics(
     current_user: dict = Depends(verify_token)
 ):
     """
-    Get analytics data for a specific user including:
-    1. Recipe distribution by tags (top 10 + others)
-    2. Most popular recipes by likes count (top 10)
+    Get analytics data for a specific user - READ ONLY but logs analytics access
     """
     try:
         # Verify user can access this data (either their own or public analytics)
@@ -42,6 +69,17 @@ async def get_user_analytics(
             pass
         
         print(f"Getting analytics for user: {user_id}")
+        
+        # Log analytics access event
+        analytics_event_data = {
+            "analytics_type": "user_specific",
+            "target_user_id": user_id,
+            "requested_by_user_id": current_user["userid"],
+            "requested_by_username": current_user["username"],
+            "is_own_analytics": current_user["userid"] == user_id,
+            "timestamp": datetime.now().isoformat()
+        }
+        log_analytics_event(current_user["userid"], "AnalyticsViewed", analytics_event_data)
         
         # Get tag distribution for user's recipes
         tag_query = """
@@ -150,10 +188,19 @@ async def get_global_analytics(
     current_user: dict = Depends(verify_token)
 ):
     """
-    Get global analytics across all recipes in the platform
+    Get global analytics across all recipes in the platform - READ ONLY but logs analytics access
     """
     try:
         print("Getting global analytics")
+        
+        # Log global analytics access event
+        analytics_event_data = {
+            "analytics_type": "global",
+            "requested_by_user_id": current_user["userid"],
+            "requested_by_username": current_user["username"],
+            "timestamp": datetime.now().isoformat()
+        }
+        log_analytics_event(current_user["userid"], "GlobalAnalyticsViewed", analytics_event_data)
         
         # Get global tag distribution
         tag_query = """

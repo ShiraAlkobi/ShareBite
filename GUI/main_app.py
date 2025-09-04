@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         login_widget = self.login_presenter.get_view()
 
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\login_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\login_theme.qss', 'r', encoding='utf-8') as f:
                 login_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Login theme file not found")
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         home_widget = self.home_presenter.get_view()
 
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
                 home_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Home theme file not found")
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
         profile_widget = self.profile_presenter.get_view()
 
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
                 profile_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Profile theme file not found")
@@ -286,12 +286,12 @@ class MainWindow(QMainWindow):
         
         # Apply recipe details theme
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
                 recipe_details_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Recipe details theme file not found, trying home theme")
             try:
-                with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+                with open('GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
                     recipe_details_widget.setStyleSheet(f.read())
             except FileNotFoundError:
                 print("No theme files found")
@@ -365,7 +365,7 @@ class MainWindow(QMainWindow):
         add_recipe_widget = self.add_recipe_presenter.get_view()
         
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
                 add_recipe_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Add recipe theme file not found")
@@ -503,7 +503,7 @@ def main():
     app = QApplication(sys.argv)
     
 
-    with open("C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\theme.qss", "r", encoding="utf-8") as f:
+    with open("GUI\\theme.qss", "r", encoding="utf-8") as f:
         app.setStyleSheet(f.read())
 
     # Set application properties
