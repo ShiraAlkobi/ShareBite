@@ -15,6 +15,7 @@ from queries.recipes_queries import SearchRecipesQuery, GetRecipeByIdQuery
 from queries.tags_queries import GetAllTagsQuery, SearchTagsQuery, GetPopularTagsQuery
 from database import execute_query, execute_scalar, execute_non_query
 from auth_routes import verify_token
+from gateway.cloudinary_service import cloudinary_gateway
 
 router = APIRouter()
 
@@ -72,51 +73,54 @@ async def upload_recipe_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(verify_token)
 ):
-    """Upload a recipe image and return the URL - LOGS ImageUploaded EVENT"""
+    """Upload a recipe image to Cloudinary and return the URL - LOGS ImageUploaded EVENT"""
     try:
         user_id = current_user["userid"]
         
-        # Validate file type
-        allowed_types = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp"]
-        if file.content_type not in allowed_types:
-            raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPEG, PNG, GIF, BMP")
+        # UPDATED: Use Cloudinary Gateway instead of local storage
+        upload_result = await cloudinary_gateway.upload_recipe_image(
+            file=file, 
+            user_id=user_id, 
+            recipe_id=None  # No recipe_id yet since this is pre-upload
+        )
         
-        # Validate file size (10MB max)
-        file_content = await file.read()
-        file_size = len(file_content)
-        if file_size > 10 * 1024 * 1024:  # 10MB
-            raise HTTPException(status_code=400, detail="File too large. Maximum size is 10MB")
-        
-        # Create uploads directory if it doesn't exist
-        uploads_dir = Path("uploads/recipes")
-        uploads_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Generate unique filename
-        file_extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-        unique_filename = f"{uuid.uuid4()}.{file_extension}"
-        file_path = uploads_dir / unique_filename
-        
-        # Save file
-        with file_path.open("wb") as buffer:
-            buffer.write(file_content)
-        
-        # Return URL that can be accessed by your app
-        image_url = f"/uploads/recipes/{unique_filename}"
-        
-        # Log image upload event
+        # Log image upload event with Cloudinary metadata
         upload_event_data = {
             "original_filename": file.filename,
-            "unique_filename": unique_filename,
-            "file_size_bytes": file_size,
+            "cloudinary_public_id": upload_result["public_id"],
+            "cloudinary_url": upload_result["url"],
+            "file_size_bytes": upload_result["bytes"],
             "file_type": file.content_type,
-            "image_url": image_url,
+            "image_dimensions": {
+                "width": upload_result["width"],
+                "height": upload_result["height"]
+            },
+            "image_format": upload_result["format"],
             "uploaded_by": current_user["username"],
+            "upload_method": "cloudinary",
+            "thumbnail_url": upload_result["thumbnail_url"],
+            "medium_url": upload_result["medium_url"],
+            "large_url": upload_result["large_url"],
             "timestamp": datetime.now().isoformat()
         }
         log_recipe_event(0, user_id, "ImageUploaded", upload_event_data)
         
-        print(f"Image uploaded successfully: {image_url}")
-        return {"image_url": image_url}
+        print(f"Image uploaded successfully to Cloudinary: {upload_result['url']}")
+        
+        # Return comprehensive response with different image sizes
+        return {
+            "image_url": upload_result["url"],  # Main URL for database storage
+            "public_id": upload_result["public_id"],  # For future operations
+            "thumbnail_url": upload_result["thumbnail_url"],
+            "medium_url": upload_result["medium_url"],
+            "large_url": upload_result["large_url"],
+            "dimensions": {
+                "width": upload_result["width"],
+                "height": upload_result["height"]
+            },
+            "format": upload_result["format"],
+            "size_bytes": upload_result["bytes"]
+        }
         
     except HTTPException:
         raise

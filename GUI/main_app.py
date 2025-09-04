@@ -480,7 +480,7 @@ class MainWindow(QMainWindow):
         analytics_widget = self.graphs_presenter.get_view()
         
         try:
-            with open('C:\\Users\\User\\Downloads\\ShareBite\\ShareBite\\GUI\\themes\\graphs_theme.qss', 'r', encoding='utf-8') as f:
+            with open('GUI\\themes\\graphs_theme.qss', 'r', encoding='utf-8') as f:
                 analytics_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Analytics theme file not found")
