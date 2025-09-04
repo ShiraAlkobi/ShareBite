@@ -8,98 +8,8 @@ from PySide6.QtGui import QFont, QPixmap
 from models.login_model import UserData
 from models.profile_model import Recipe
 from typing import List, Optional
+from views.components.recipe_card import ProfileRecipeCard
 
-class RecipeCard(QFrame):
-    """Individual recipe card component"""
-    
-    recipe_selected = Signal(int)
-    like_toggled = Signal(int)
-    
-    def __init__(self, recipe: Recipe, parent=None):
-        super().__init__(parent)
-        self.recipe = recipe
-        self.setObjectName("ProfileRecipeCard")
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Setup recipe card UI"""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-        
-        # Recipe image placeholder
-        image_frame = QFrame()
-        image_frame.setObjectName("ProfileRecipeImage")
-        image_frame.setFixedHeight(120)
-        
-        image_layout = QVBoxLayout(image_frame)
-        image_layout.setAlignment(Qt.AlignCenter)
-        
-        image_label = QLabel("🍳")
-        image_label.setObjectName("ProfileRecipeImageLabel")
-        image_layout.addWidget(image_label)
-        
-        # Recipe content
-        content_frame = QFrame()
-        content_frame.setObjectName("ProfileRecipeContent")
-        
-        content_layout = QVBoxLayout(content_frame)
-        content_layout.setContentsMargins(12, 12, 12, 12)
-        content_layout.setSpacing(8)
-        
-        # Title
-        title_label = QLabel(self.recipe.title)
-        title_label.setObjectName("ProfileRecipeTitle")
-        title_label.setWordWrap(True)
-        
-        # Description
-        desc_label = QLabel(self.recipe.description[:100] + "..." if len(self.recipe.description) > 100 else self.recipe.description)
-        desc_label.setObjectName("ProfileRecipeDescription")
-        desc_label.setWordWrap(True)
-        
-        # Stats and actions
-        stats_frame = QFrame()
-        stats_frame.setObjectName("ProfileRecipeStats")
-        
-        stats_layout = QHBoxLayout(stats_frame)
-        stats_layout.setContentsMargins(0, 0, 0, 0)
-        stats_layout.setSpacing(8)
-        
-        # Like button
-        self.like_button = QPushButton(f"❤️ {self.recipe.likes_count}")
-        self.like_button.setObjectName("ProfileRecipeLikeButton")
-        self.like_button.clicked.connect(lambda: self.like_toggled.emit(self.recipe.recipe_id))
-        
-        # Update like button style based on status
-        self.update_like_status(self.recipe.is_liked)
-        
-        # View button
-        view_button = QPushButton("View Recipe")
-        view_button.setObjectName("ProfileRecipeViewButton")
-        view_button.clicked.connect(lambda: self.recipe_selected.emit(self.recipe.recipe_id))
-        
-        stats_layout.addWidget(self.like_button)
-        stats_layout.addStretch()
-        stats_layout.addWidget(view_button)
-        
-        content_layout.addWidget(title_label)
-        content_layout.addWidget(desc_label)
-        content_layout.addWidget(stats_frame)
-        
-        layout.addWidget(image_frame)
-        layout.addWidget(content_frame)
-    
-    def update_like_status(self, is_liked: bool):
-        """Update like button based on status"""
-        self.recipe.is_liked = is_liked
-        if is_liked:
-            self.like_button.setProperty("liked", "true")
-        else:
-            self.like_button.setProperty("liked", "false")
-        
-        # Force style refresh
-        self.like_button.style().unpolish(self.like_button)
-        self.like_button.style().polish(self.like_button)
 
 class EditProfileDialog(QDialog):
     """Dialog for editing profile information"""
@@ -506,11 +416,11 @@ class ProfileView(QWidget):
         
         self.my_recipes_empty.hide()
         
-        # Add recipe cards
+        # Add recipe cards using shared component
         for i, recipe in enumerate(recipes):
-            card = RecipeCard(recipe)
-            card.recipe_selected.connect(self.recipe_selected.emit)
-            card.like_toggled.connect(self.recipe_like_toggled.emit)
+            card = ProfileRecipeCard(recipe)  # Use shared component
+            card.recipe_clicked.connect(self.recipe_selected.emit)
+            card.recipe_liked.connect(self.recipe_like_toggled.emit)
             
             row = i // 3
             col = i % 3
@@ -530,11 +440,11 @@ class ProfileView(QWidget):
         
         self.favorite_recipes_empty.hide()
         
-        # Add recipe cards
+        # Add recipe cards using shared component
         for i, recipe in enumerate(recipes):
-            card = RecipeCard(recipe)
-            card.recipe_selected.connect(self.recipe_selected.emit)
-            card.like_toggled.connect(self.recipe_like_toggled.emit)
+            card = ProfileRecipeCard(recipe)  # Use shared component
+            card.recipe_clicked.connect(self.recipe_selected.emit)
+            card.recipe_liked.connect(self.recipe_like_toggled.emit)
             
             row = i // 3
             col = i % 3
@@ -542,20 +452,70 @@ class ProfileView(QWidget):
             self.favorite_recipe_cards[recipe.recipe_id] = card
     
     def clear_recipe_grid(self, grid_layout, card_dict):
-        """Clear recipe grid and card dictionary"""
-        for card in card_dict.values():
-            grid_layout.removeWidget(card)
-            card.deleteLater()
+        """Clear recipe grid and card dictionary with proper cleanup"""
+        cards_to_remove = list(card_dict.values())
+        
+        for card in cards_to_remove:
+            try:
+                # Clean up image loading threads
+                if hasattr(card, 'cleanup'):
+                    card.cleanup()
+                
+                # Remove from layout safely
+                try:
+                    if grid_layout.indexOf(card) != -1:
+                        grid_layout.removeWidget(card)
+                except RuntimeError:
+                    pass
+                
+                # Hide and schedule deletion
+                try:
+                    card.hide()
+                    card.deleteLater()
+                except RuntimeError:
+                    pass
+                    
+            except RuntimeError:
+                print(f"Widget already deleted during cleanup")
+                continue
+            except Exception as e:
+                print(f"Error cleaning up profile recipe card: {e}")
+                continue
+        
         card_dict.clear()
-    
-    def update_recipe_like_status(self, recipe_id: int, is_liked: bool):
+        
+    def update_recipe_like_status(self, recipe_id: int, is_liked: bool, likes_count: int = None):
         """Update like status for a specific recipe"""
         # Update in both card dictionaries
         if recipe_id in self.user_recipe_cards:
-            self.user_recipe_cards[recipe_id].update_like_status(is_liked)
+            card = self.user_recipe_cards[recipe_id]
+            if likes_count is not None:
+                card.update_like_status(is_liked, likes_count)
+            else:
+                # Calculate likes count if not provided
+                current_count = getattr(card.recipe, 'likes_count', 0)
+                if is_liked and not getattr(card.recipe, 'is_liked', False):
+                    new_count = current_count + 1
+                elif not is_liked and getattr(card.recipe, 'is_liked', False):
+                    new_count = max(0, current_count - 1)
+                else:
+                    new_count = current_count
+                card.update_like_status(is_liked, new_count)
         
         if recipe_id in self.favorite_recipe_cards:
-            self.favorite_recipe_cards[recipe_id].update_like_status(is_liked)
+            card = self.favorite_recipe_cards[recipe_id]
+            if likes_count is not None:
+                card.update_like_status(is_liked, likes_count)
+            else:
+                # Calculate likes count if not provided
+                current_count = getattr(card.recipe, 'likes_count', 0)
+                if is_liked and not getattr(card.recipe, 'is_liked', False):
+                    new_count = current_count + 1
+                elif not is_liked and getattr(card.recipe, 'is_liked', False):
+                    new_count = max(0, current_count - 1)
+                else:
+                    new_count = current_count
+                card.update_like_status(is_liked, new_count)
     
     def show_edit_dialog(self):
         """Show edit profile dialog"""

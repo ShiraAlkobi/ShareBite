@@ -15,7 +15,7 @@ from queries.recipes_queries import SearchRecipesQuery, GetRecipeByIdQuery
 from queries.tags_queries import GetAllTagsQuery, SearchTagsQuery, GetPopularTagsQuery
 from database import execute_query, execute_scalar, execute_non_query
 from auth_routes import verify_token
-from gateway.cloudinary_service import cloudinary_gateway
+
 
 router = APIRouter()
 
@@ -73,7 +73,6 @@ async def upload_recipe_image(
     file: UploadFile = File(...),
     current_user: dict = Depends(verify_token)
 ):
-    """Upload a recipe image to Cloudinary and return the URL - LOGS ImageUploaded EVENT"""
     try:
         user_id = current_user["userid"]
         
@@ -97,37 +96,20 @@ async def upload_recipe_image(
             },
             "image_format": upload_result["format"],
             "uploaded_by": current_user["username"],
-            "upload_method": "cloudinary",
-            "thumbnail_url": upload_result["thumbnail_url"],
-            "medium_url": upload_result["medium_url"],
-            "large_url": upload_result["large_url"],
+            "upload_method": "local_storage",
             "timestamp": datetime.now().isoformat()
         }
         log_recipe_event(0, user_id, "ImageUploaded", upload_event_data)
         
-        print(f"Image uploaded successfully to Cloudinary: {upload_result['url']}")
-        
-        # Return comprehensive response with different image sizes
-        return {
-            "image_url": upload_result["url"],  # Main URL for database storage
-            "public_id": upload_result["public_id"],  # For future operations
-            "thumbnail_url": upload_result["thumbnail_url"],
-            "medium_url": upload_result["medium_url"],
-            "large_url": upload_result["large_url"],
-            "dimensions": {
-                "width": upload_result["width"],
-                "height": upload_result["height"]
-            },
-            "format": upload_result["format"],
-            "size_bytes": upload_result["bytes"]
-        }
+        print(f"Image uploaded successfully (local): {image_url}")
+        return {"image_url": image_url}
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error uploading image: {e}")
         raise HTTPException(status_code=500, detail=f"Error uploading image: {str(e)}")
-
+    
 @router.get("/tags", response_model=TagsListResponse)
 async def get_all_tags():
     """Get all available tags for recipes - READ ONLY (no event logging)"""

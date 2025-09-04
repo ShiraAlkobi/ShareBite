@@ -37,7 +37,6 @@ class MainWindow(QMainWindow):
         def qt_message_handler(mode, context, message):
             if "Unknown property" in message:
                 return  # Ignore unknown property warnings
-            print(message)
 
         # Add this in your MainWindow.__init__
         qInstallMessageHandler(qt_message_handler)
@@ -70,14 +69,13 @@ class MainWindow(QMainWindow):
                 widget_name = current_widget.objectName()
                 
                 if widget_name == "LoginView":
-                    # Login view sizing
-                    self.setMinimumSize(700, 500)
-                    self.setMaximumSize(800, 650)
-                    self.resize(750, 580)
+                    self.setMinimumSize(800, 600)
+                    self.setMaximumSize(1000, 800)
+                    self.resize(900, 700)
                     
                 elif widget_name == "HomeView":
                     # Home view sizing - larger for content
-                    self.setMinimumSize(900, 600)
+                    self.setMinimumSize(1000, 600)
                     self.setMaximumSize(1200, 800)
                     self.resize(1000, 700)
                     
@@ -89,16 +87,16 @@ class MainWindow(QMainWindow):
                     
                 elif widget_name == "AddRecipeView":
                     # Add recipe view sizing
-                    self.setMinimumSize(800, 600)
-                    self.setMaximumSize(1000, 800)
-                    self.resize(900, 700)
+                    self.setMinimumSize(1000, 600)
+                    self.setMaximumSize(1300, 800)
+                    self.resize(1100, 700)
                 
                 # Add this case for analytics view
                 elif widget_name == "GraphsView":
                     # Analytics view sizing - larger for charts
-                    self.setMinimumSize(1000, 700)
-                    self.setMaximumSize(1400, 900)
-                    self.resize(1200, 800)
+                    self.setMinimumSize(1000, 600)
+                    self.setMaximumSize(1300, 800)
+                    self.resize(1200, 700)
                 
                 else:
                     # Default sizing for unknown widgets
@@ -136,7 +134,7 @@ class MainWindow(QMainWindow):
         login_widget = self.login_presenter.get_view()
 
         try:
-            with open('GUI\\themes\\login_theme.qss', 'r', encoding='utf-8') as f:
+            with open('themes\\login_theme.qss', 'r', encoding='utf-8') as f:
                 login_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Login theme file not found")
@@ -184,7 +182,6 @@ class MainWindow(QMainWindow):
     def show_home_view(self):
         """Initialize and show home view"""
         print("Initializing home view...")
-        print("Initializing home view...")
         
         # Create home presenter with user data and token
         self.home_presenter = HomePresenter(
@@ -203,11 +200,21 @@ class MainWindow(QMainWindow):
         # Show home view
         home_widget = self.home_presenter.get_view()
 
-        try:
-            with open('GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
-                home_widget.setStyleSheet(f.read())
-        except FileNotFoundError:
-            print("Home theme file not found")
+        # Load combined themes - REPLACE THE EXISTING THEME LOADING CODE
+        combined_styles = self.load_combined_themes(
+            'themes\\home_theme.qss',
+            'themes\\recipe_card.qss'
+        )
+        
+        if combined_styles:
+            home_widget.setStyleSheet(combined_styles)
+        else:
+            # Fallback to just home theme
+            try:
+                with open('themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+                    home_widget.setStyleSheet(f.read())
+            except FileNotFoundError:
+                print("Home theme file not found")
 
         if self.stack.indexOf(home_widget) == -1:
             self.stack.addWidget(home_widget)
@@ -237,11 +244,21 @@ class MainWindow(QMainWindow):
         # Add profile widget to stack and switch to it
         profile_widget = self.profile_presenter.get_view()
 
-        try:
-            with open('GUI\\themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
-                profile_widget.setStyleSheet(f.read())
-        except FileNotFoundError:
-            print("Profile theme file not found")
+        # Load combined themes - REPLACE THE EXISTING THEME LOADING CODE
+        combined_styles = self.load_combined_themes(
+            'themes\\profile_theme.qss',
+            'themes\\recipe_card.qss'
+        )
+        
+        if combined_styles:
+            profile_widget.setStyleSheet(combined_styles)
+        else:
+            # Fallback to just profile theme
+            try:
+                with open('themes\\profile_theme.qss', 'r', encoding='utf-8') as f:
+                    profile_widget.setStyleSheet(f.read())
+            except FileNotFoundError:
+                print("Profile theme file not found")
         
         if self.stack.indexOf(profile_widget) == -1:
             self.stack.addWidget(profile_widget)
@@ -286,12 +303,12 @@ class MainWindow(QMainWindow):
         
         # Apply recipe details theme
         try:
-            with open('GUI\\themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
+            with open('themes\\recipe_details_theme.qss', 'r', encoding='utf-8') as f:
                 recipe_details_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Recipe details theme file not found, trying home theme")
             try:
-                with open('GUI\\themes\\home_theme.qss', 'r', encoding='utf-8') as f:
+                with open('themes\\home_theme.qss', 'r', encoding='utf-8') as f:
                     recipe_details_widget.setStyleSheet(f.read())
             except FileNotFoundError:
                 print("No theme files found")
@@ -365,7 +382,7 @@ class MainWindow(QMainWindow):
         add_recipe_widget = self.add_recipe_presenter.get_view()
         
         try:
-            with open('GUI\\themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
+            with open('themes\\add_recipe_theme.qss', 'r', encoding='utf-8') as f:
                 add_recipe_widget.setStyleSheet(f.read())
         except FileNotFoundError:
             print("Add recipe theme file not found")
@@ -448,6 +465,29 @@ class MainWindow(QMainWindow):
             self.recipe_details_presenter.cleanup()
         
         event.accept()
+    
+    def load_combined_themes(self, *theme_files):
+        """Load and combine multiple theme files"""
+        combined_styles = ""
+        print(f"DEBUG: Attempting to load {len(theme_files)} theme files:")
+        
+        for file_path in theme_files:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    combined_styles += content + "\n"
+                    print(f"DEBUG: ✅ Loaded {file_path} ({len(content)} characters)")
+                    
+                    # Print first 200 characters to verify content
+                    print(f"DEBUG: Preview: {content[:200]}...")
+                    
+            except FileNotFoundError:
+                print(f"DEBUG: ❌ Theme file not found: {file_path}")
+            except Exception as e:
+                print(f"DEBUG: ❌ Error loading {file_path}: {e}")
+        
+        print(f"DEBUG: Total combined styles: {len(combined_styles)} characters")
+        return combined_styles
 
     def load_theme_files(*theme_files):
         combined_styles = ""
@@ -503,7 +543,7 @@ def main():
     app = QApplication(sys.argv)
     
 
-    with open("GUI\\theme.qss", "r", encoding="utf-8") as f:
+    with open("themes\\theme.qss", "r", encoding="utf-8") as f:
         app.setStyleSheet(f.read())
 
     # Set application properties

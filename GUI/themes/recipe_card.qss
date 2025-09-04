@@ -1,0 +1,16 @@
+/* themes/shared_recipe_card.qss */
+/* themes/shared_recipe_card.qss */
+QFrame#RecipeImageContainer {
+    background: qlineargradient(
+        x1:0, y1:0, x2:1, y2:1,
+        stop:0 rgba(240, 147, 251, 0.8),
+        stop:1 rgba(245, 87, 108, 0.8)
+    ) !important;
+    border-radius: 15px 15px 0px 0px !important;
+    border: none !important;
+}
+
+QLabel#RecipeImage {
+    color: white !important;
+    font-size: 48px !important;
+}

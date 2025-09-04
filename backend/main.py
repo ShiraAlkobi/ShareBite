@@ -5,16 +5,12 @@ from contextlib import asynccontextmanager
 import uvicorn
 from database import test_connection, get_database_stats
 
-# Import authentication and recipe routes
 from routes.auth_routes import router as auth_router
 from routes.recipe_routes import router as recipe_router
 from routes.user_routes import router as profile_router
 from routes.add_recipe_routes import router as add_recipe_router
 from routes.chat_routes import router as chat_router
 from routes.graph_routes import router as analytics_router
-
-# Import other routers when you create them
-# from routers import recipes, users, tags
 
 # Application lifespan management
 @asynccontextmanager
@@ -96,24 +92,6 @@ app.include_router(
     tags=["Add Recipe"]
 )
 
-# Include other routers when you create them
-# app.include_router(
-#     users.router,
-#     prefix="/api/v1/users",
-#     tags=["Users"]
-# )
-
-# app.include_router(
-#     recipes.router,
-#     prefix="/api/v1/recipes", 
-#     tags=["Recipes"]
-# )
-
-# app.include_router(
-#     tags.router,
-#     prefix="/api/v1/tags",
-#     tags=["Tags"]
-# )
 
 # Root endpoint
 @app.get("/")
@@ -205,22 +183,18 @@ app.include_router(
 )
 
 if __name__ == "__main__":
-    """
-    Run the server directly for development
-    Production deployment should use a proper ASGI server
-    """
+    
     print("🔧 Running in development mode...")
-    print("🌐 Server will be available at: http://127.0.0.1:8000")
-    print("📚 API Documentation: http://127.0.0.1:8000/docs")
-    print("📋 Alternative Docs: http://127.0.0.1:8000/redoc")
-    print("💗 Health Check: http://127.0.0.1:8000/health")
-    print("🔐 Authentication: http://127.0.0.1:8000/api/v1/auth/")
+    print("🌐 Server will be available at: http://127.0.0.1:8001")  
+    print("📚 API Documentation: http://127.0.0.1:8001/docs")       
+    print("📋 Alternative Docs: http://127.0.0.1:8001/redoc")       
+    print("💗 Health Check: http://127.0.0.1:8001/health")          
+    print("🔐 Authentication: http://127.0.0.1:8001/api/v1/auth/")  
     
     uvicorn.run(
         "main:app",
         host="127.0.0.1",
-        port=8000,
-        reload=True,  # Auto-reload on code changes
+        port=8001,  # Changed from 8000 to 8001
+        reload=True,
         log_level="info"
     )
-

@@ -43,7 +43,6 @@ class HomePresenter(QObject):
         """Connect model signals to presenter methods"""
         self.model.recipes_loaded.connect(self.on_recipes_loaded)
         self.model.recipes_load_failed.connect(self.on_recipes_load_failed)
-        # self.model.user_stats_loaded.connect(self.on_user_stats_loaded)
         self.model.recipe_liked.connect(self.on_recipe_liked)
         self.model.recipe_favorited.connect(self.on_recipe_favorited)
         self.model.search_results_loaded.connect(self.on_search_results_loaded)
@@ -56,7 +55,7 @@ class HomePresenter(QObject):
         self.view.refresh_requested.connect(self.handle_refresh_request)
         self.view.add_recipe_requested.connect(self.add_recipe_requested.emit)
         self.view.user_profile_requested.connect(self.user_profile_requested.emit)
-        self.view.analytics_requested.connect(self.analytics_requested.emit)  # Add this line
+        self.view.analytics_requested.connect(self.analytics_requested.emit)
         self.view.logout_requested.connect(self.logout_requested.emit)
         
         # Recipe interaction signals
@@ -72,74 +71,63 @@ class HomePresenter(QObject):
         """Load initial data when home screen opens"""
         print("🏠 Loading initial home data...")
         
-        # Set loading state
-        self.is_loading = True
-        # self.view.set_loading_state(True)
+        # Set loading state with message
+        self.set_loading_state(True, "Loading recipes...")
         
-        # Load recipe feed and user stats
+        # Load recipe feed
         self.model.load_recipe_feed()
-        # self.model.load_user_stats()
+
+    def set_loading_state(self, loading: bool, message: str = "Loading..."):
+        """Centralized loading state management"""
+        print(f"PRESENTER: Setting loading state: {loading} - {message}")
+        self.is_loading = loading
+        self.view.set_loading_state(loading, message)
 
     def get_view(self):
         """Return the QWidget of the home view"""
         return self.view
     
     def handle_search_request(self, query: str, filters: Dict[str, Any]):
-        """
-        Handle search request from view
-        
-        Args:
-            query (str): Search query
-            filters (dict): Search filters
-        """
+        """Handle search request from view"""
         if self.is_loading:
+            print("PRESENTER: Search blocked - already loading")
             return
         
         self.current_search_query = query
-        self.is_loading = True
-        self.view.set_loading_state(True)
-        
         print(f"🔍 Handling search request: '{query}' with filters: {filters}")
         
+        # Set specific loading message for search
         if query.strip():
-            # Perform search
+            self.set_loading_state(True, f"Searching for '{query}'...")
             self.model.search_recipes(query, filters)
         else:
-            # Load regular feed if search is empty
+            self.set_loading_state(True, "Loading recipes...")
             self.model.load_recipe_feed()
     
     def handle_refresh_request(self):
         """Handle refresh request from view"""
         if self.is_loading:
+            print("PRESENTER: Refresh blocked - already loading")
             return
         
         print("🔄 Handling refresh request")
         
-        self.is_loading = True
-        self.view.set_loading_state(True)
-        
         if self.current_search_query:
             # Refresh search results
+            self.set_loading_state(True, f"Refreshing search for '{self.current_search_query}'...")
             self.model.search_recipes(self.current_search_query)
         else:
             # Refresh main feed
+            self.set_loading_state(True, "Refreshing recipes...")
             self.model.refresh_feed()
     
     def handle_recipe_clicked(self, recipe_id: int):
-        """
-        Handle recipe card click
-        
-        Args:
-            recipe_id (int): ID of clicked recipe
-        """
+        """Handle recipe card click"""
         print(f"📖 Recipe clicked: {recipe_id}")
         self.recipe_details_requested.emit(recipe_id)
     
     def handle_recipe_liked(self, recipe_id: int):
-        """
-        Handle recipe like action with optimistic updates
-        Updates UI immediately, then syncs with server
-        """
+        """Handle recipe like action with optimistic updates"""
         print(f"❤️ Recipe like requested: {recipe_id}")
         
         # Find current recipe in cached data
@@ -212,10 +200,7 @@ class HomePresenter(QObject):
         )
 
     def handle_recipe_favorited(self, recipe_id: int):
-        """
-        Handle recipe favorite action with optimistic updates
-        Similar pattern to likes
-        """
+        """Handle recipe favorite action with optimistic updates"""
         print(f"⭐ Recipe favorite requested: {recipe_id}")
         
         # Find current recipe in cached data
@@ -275,19 +260,14 @@ class HomePresenter(QObject):
         )
     
     def handle_filter_changed(self, filters: Dict[str, Any]):
-        """
-        Handle filter change from view
-        
-        Args:
-            filters (dict): New filter settings
-        """
+        """Handle filter change from view"""
         print(f"🎛️ Filters changed: {filters}")
         
         if self.is_loading:
+            print("PRESENTER: Filter change blocked - already loading")
             return
         
-        self.is_loading = True
-        self.view.set_loading_state(True)
+        self.set_loading_state(True, "Applying filters...")
         
         if self.current_search_query:
             # Apply filters to current search
@@ -299,107 +279,60 @@ class HomePresenter(QObject):
     def handle_load_more_request(self):
         """Handle load more recipes request (pagination)"""
         if self.is_loading:
+            print("PRESENTER: Load more blocked - already loading")
             return
         
         print("📄 Load more recipes requested")
         
+        self.set_loading_state(True, "Loading more recipes...")
         current_count = len(self.model.get_cached_recipes())
         self.model.load_recipe_feed(limit=20, offset=current_count)
     
     def on_recipes_loaded(self, recipes: List[RecipeData]):
-        """
-        Handle successful recipe loading
+        """Handle successful recipe loading"""
+        print(f"✅ Recipes loaded successfully: {len(recipes)} recipes")
         
-        Args:
-            recipes (List[RecipeData]): Loaded recipes
-        """
-        self.is_loading = False
-        self.view.set_loading_state(False)
+        self.set_loading_state(False)
         self.view.display_recipes(recipes)
         
         print(f"✅ Displayed {len(recipes)} recipes in view")
     
     def on_recipes_load_failed(self, error_message: str):
-        """
-        Handle failed recipe loading
-        
-        Args:
-            error_message (str): Error message
-        """
-        self.is_loading = False
-        self.view.set_loading_state(False)
-        self.view.show_error_message(f"Failed to load recipes: {error_message}")
-        
+        """Handle failed recipe loading"""
         print(f"❌ Recipe loading failed: {error_message}")
-    
-    # def on_user_stats_loaded(self, stats: UserStatsData):
-    #     """
-    #     Handle successful user stats loading
         
-    #     Args:
-    #         stats (UserStatsData): User statistics
-    #     """
-    #     self.view.display_user_stats(stats)
-    #     print(f"✅ Displayed user stats: {stats}")
+        self.set_loading_state(False)
+        self.view.show_error_message(f"Failed to load recipes: {error_message}")
     
     def on_recipe_liked(self, recipe_id: int, is_liked: bool):
-        """
-        Handle successful recipe like/unlike
-        
-        Args:
-            recipe_id (int): Recipe ID
-            is_liked (bool): New like status
-        """
+        """Handle successful recipe like/unlike"""
         self.view.update_recipe_like_status(recipe_id, is_liked)
         print(f"✅ Updated like status for recipe {recipe_id}: {is_liked}")
     
     def on_recipe_favorited(self, recipe_id: int, is_favorited: bool):
-        """
-        Handle successful recipe favorite/unfavorite
-        
-        Args:
-            recipe_id (int): Recipe ID
-            is_favorited (bool): New favorite status
-        """
+        """Handle successful recipe favorite/unfavorite"""
         self.view.update_recipe_favorite_status(recipe_id, is_favorited)
         print(f"✅ Updated favorite status for recipe {recipe_id}: {is_favorited}")
     
     def on_search_results_loaded(self, recipes: List[RecipeData]):
-        """
-        Handle successful search results loading
+        """Handle successful search results loading"""
+        print(f"✅ Search results loaded: {len(recipes)} recipes for '{self.current_search_query}'")
         
-        Args:
-            recipes (List[RecipeData]): Search results
-        """
-        self.is_loading = False
-        self.view.set_loading_state(False)
+        self.set_loading_state(False)
         self.view.display_search_results(recipes, self.current_search_query)
-        
-        print(f"✅ Displayed {len(recipes)} search results for '{self.current_search_query}'")
     
     def on_network_error(self, error_message: str):
-        """
-        Handle network errors
-        
-        Args:
-            error_message (str): Network error message
-        """
-        self.is_loading = False
-        self.view.set_loading_state(False)
-        self.view.show_error_message(f"Network Error: {error_message}")
-        
+        """Handle network errors"""
         print(f"🌐 Network error: {error_message}")
+        
+        self.set_loading_state(False)
+        self.view.show_error_message(f"Network Error: {error_message}")
     
     def show_view(self):
         """Show the home view"""
         self.view.show()
         self.view.raise_()
         self.view.activateWindow()
-    
-    def get_view(self):
-        """Return the QWidget of the home view"""
-        return self.view
-
     
     def hide_view(self):
         """Hide the home view"""
@@ -424,4 +357,7 @@ class HomePresenter(QObject):
     def cleanup(self):
         """Cleanup resources"""
         print("🧹 Cleaning up home presenter resources")
-        # Any cleanup needed for the presenter
+        # Stop any running timers in view
+        if hasattr(self.view, 'spinner_timer') and self.view.spinner_timer.isActive():
+            self.view.spinner_timer.stop()
+        # Any other cleanup needed

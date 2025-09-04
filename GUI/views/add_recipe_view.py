@@ -454,46 +454,60 @@ class AddRecipeView(QWidget):
         row += 1
         
         # Photo Upload Section
-        photo_label = QLabel("Recipe Photo")
+        photo_label = QLabel("Recipe Photo URL")
         photo_label.setObjectName("AddRecipeFieldLabel")
-        
+
         photo_container = QFrame()
         photo_container.setObjectName("AddRecipePhotoContainer")
-        
+
         photo_layout = QVBoxLayout(photo_container)
         photo_layout.setContentsMargins(10, 10, 10, 10)
         photo_layout.setSpacing(10)
-        
+
+        # URL input field
+        url_input_frame = QFrame()
+        url_input_layout = QHBoxLayout(url_input_frame)
+        url_input_layout.setContentsMargins(0, 0, 0, 0)
+        url_input_layout.setSpacing(8)
+
+        self.image_url_input = QLineEdit()
+        self.image_url_input.setObjectName("AddRecipeImageUrlInput")
+        self.image_url_input.setPlaceholderText("Enter image URL (e.g., https://example.com/recipe-image.jpg)")
+        self.image_url_input.textChanged.connect(self.on_image_url_changed)
+
+        preview_btn = QPushButton("Preview")
+        preview_btn.setObjectName("AddRecipePreviewButton")
+        preview_btn.clicked.connect(self.preview_image_url)
+
+        url_input_layout.addWidget(self.image_url_input)
+        url_input_layout.addWidget(preview_btn)
+
         # Photo preview
-        self.photo_preview = QLabel("No photo selected")
+        self.photo_preview = QLabel("No image URL provided")
         self.photo_preview.setObjectName("AddRecipePhotoPreview")
         self.photo_preview.setAlignment(Qt.AlignCenter)
         self.photo_preview.setMinimumHeight(150)
         self.photo_preview.setMaximumHeight(200)
         self.photo_preview.setStyleSheet("border: 2px dashed #ccc; border-radius: 8px;")
-        
+
         # Photo buttons
         photo_buttons = QFrame()
         photo_buttons_layout = QHBoxLayout(photo_buttons)
         photo_buttons_layout.setContentsMargins(0, 0, 0, 0)
         photo_buttons_layout.setSpacing(10)
-        
-        self.upload_photo_btn = QPushButton("Upload Photo")
-        self.upload_photo_btn.setObjectName("AddRecipeUploadButton")
-        self.upload_photo_btn.clicked.connect(self.select_photo)
-        
-        self.remove_photo_btn = QPushButton("Remove Photo")
-        self.remove_photo_btn.setObjectName("AddRecipeRemovePhotoButton")
-        self.remove_photo_btn.clicked.connect(self.remove_photo)
-        self.remove_photo_btn.hide()
-        
-        photo_buttons_layout.addWidget(self.upload_photo_btn)
-        photo_buttons_layout.addWidget(self.remove_photo_btn)
+
+        self.clear_image_btn = QPushButton("Clear Image")
+        self.clear_image_btn.setObjectName("AddRecipeClearImageButton")
+        self.clear_image_btn.clicked.connect(self.clear_image_url)
+        self.clear_image_btn.hide()
+
+        photo_buttons_layout.addWidget(self.clear_image_btn)
         photo_buttons_layout.addStretch()
-        
+
+        photo_layout.addWidget(url_input_frame)
         photo_layout.addWidget(self.photo_preview)
         photo_layout.addWidget(photo_buttons)
-        
+
         form_layout.addWidget(photo_label, row, 0)
         form_layout.addWidget(photo_container, row, 1, 1, 2)
         row += 1
@@ -533,41 +547,120 @@ class AddRecipeView(QWidget):
         
         return actions_container
     
-    def select_photo(self):
-        """Open file dialog to select photo"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Recipe Photo",
-            "",
-            "Image Files (*.png *.jpg *.jpeg *.bmp *.gif)"
-        )
+    def on_image_url_changed(self):
+        """Handle image URL input changes"""
+        url = self.image_url_input.text().strip()
+        if not url:
+            self.clear_image_url()
+
+    def preview_image_url(self):
+        """Preview image from URL"""
+        url = self.image_url_input.text().strip()
         
-        if file_path:
-            self.selected_image_path = file_path
+        if not url:
+            self.show_message("Please enter an image URL", is_error=True)
+            return
+        
+        # Basic URL validation
+        if not url.startswith(('http://', 'https://')):
+            self.show_message("Please enter a valid URL starting with http:// or https://", is_error=True)
+            return
+        
+        # Show loading state
+        self.photo_preview.setText("Loading image...")
+        self.photo_preview.setStyleSheet("border: 2px dashed #007acc; border-radius: 8px; color: #007acc;")
+        
+        # Load image using the shared ImageLoader (reuse from recipe details)
+        self.load_image_from_url(url)
+
+    def load_image_from_url(self, image_url: str):
+        """Load image from URL for preview"""
+        try:
+            # Import and use the shared ImageLoader
+            from views.components.recipe_card import ImageLoader
+            from PySide6.QtCore import QThread
             
-            # Show preview
-            pixmap = QPixmap(file_path)
-            if not pixmap.isNull():
-                # Scale pixmap to fit preview
-                scaled_pixmap = pixmap.scaled(
-                    self.photo_preview.size(),
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
-                self.photo_preview.setPixmap(scaled_pixmap)
-                self.photo_preview.setText("")
-                
-                # Show remove button
-                self.remove_photo_btn.show()
-                
-                print(f"Photo selected: {file_path}")
-    
-    def remove_photo(self):
-        """Remove selected photo"""
-        self.selected_image_path = None
+            # Clean up any existing loader
+            self.cleanup_image_loader()
+            
+            # Create thread and worker for image loading
+            self.image_loader_thread = QThread()
+            self.image_loader = ImageLoader(image_url, (200, 150))
+            
+            # Move worker to thread
+            self.image_loader.moveToThread(self.image_loader_thread)
+            
+            # Connect signals
+            self.image_loader_thread.started.connect(self.image_loader.load_image)
+            self.image_loader.image_loaded.connect(self.on_preview_image_loaded)
+            self.image_loader.image_failed.connect(self.on_preview_image_failed)
+            
+            # Clean up thread when done
+            self.image_loader.image_loaded.connect(self.image_loader_thread.quit)
+            self.image_loader.image_failed.connect(self.image_loader_thread.quit)
+            self.image_loader_thread.finished.connect(self.image_loader.deleteLater)
+            self.image_loader_thread.finished.connect(self.image_loader_thread.deleteLater)
+            
+            # Start loading
+            self.image_loader_thread.start()
+            
+        except Exception as e:
+            print(f"Error setting up image preview loading: {e}")
+            self.on_preview_image_failed()
+
+    def on_preview_image_loaded(self, pixmap):
+        """Handle successful image preview loading"""
+        try:
+            self.photo_preview.clear()
+            self.photo_preview.setStyleSheet("border: 2px solid #28a745; border-radius: 8px;")
+            self.photo_preview.setPixmap(pixmap)
+            self.photo_preview.setScaledContents(False)
+            
+            # Show clear button
+            self.clear_image_btn.show()
+            
+            print("Image preview loaded successfully")
+        except Exception as e:
+            print(f"Error displaying preview image: {e}")
+            self.on_preview_image_failed()
+
+    def on_preview_image_failed(self):
+        """Handle failed image preview loading"""
+        print("Failed to load image preview")
         self.photo_preview.clear()
-        self.photo_preview.setText("No photo selected")
-        self.remove_photo_btn.hide()
+        self.photo_preview.setText("Failed to load image\nPlease check the URL")
+        self.photo_preview.setStyleSheet("border: 2px dashed #dc3545; border-radius: 8px; color: #dc3545;")
+
+    def cleanup_image_loader(self):
+        """Clean up image loading thread"""
+        try:
+            if hasattr(self, 'image_loader_thread') and self.image_loader_thread and self.image_loader_thread.isRunning():
+                if hasattr(self, 'image_loader') and self.image_loader:
+                    self.image_loader.stop()
+                
+                self.image_loader_thread.quit()
+                
+                if not self.image_loader_thread.wait(1000):
+                    self.image_loader_thread.terminate()
+                    self.image_loader_thread.wait(500)
+                
+                self.image_loader_thread = None
+                self.image_loader = None
+        except RuntimeError:
+            pass
+        except Exception as e:
+            print(f"Error during image loader cleanup: {e}")
+
+    def clear_image_url(self):
+        """Clear image URL and preview"""
+        self.image_url_input.clear()
+        self.photo_preview.clear()
+        self.photo_preview.setText("No image URL provided")
+        self.photo_preview.setStyleSheet("border: 2px dashed #ccc; border-radius: 8px; color: #666;")
+        self.clear_image_btn.hide()
+        
+        # Clean up any loading threads
+        self.cleanup_image_loader()
     
     def create_recipe(self):
         """Validate and create recipe"""
@@ -583,7 +676,7 @@ class AddRecipeView(QWidget):
             'ingredients': self.ingredients_input.toPlainText().strip(),
             'instructions': self.instructions_input.toPlainText().strip(),
             'tags': self.tags_widget.get_tags(),
-            'image_path': self.selected_image_path
+            'image_url': self.image_url_input.text().strip() or None  # Use URL directly
         }
         
         print(f"Creating recipe: {recipe_data['title']}")
@@ -629,7 +722,7 @@ class AddRecipeView(QWidget):
         self.ingredients_input.clear()
         self.instructions_input.clear()
         self.tags_widget.set_tags([])
-        self.remove_photo()
+        self.clear_image_url()  # Updated method name
     
     def show_message(self, message: str, is_error: bool = True):
         """Show message with styling"""
@@ -649,4 +742,5 @@ class AddRecipeView(QWidget):
     
     def cleanup(self):
         """Clean up resources"""
+        self.cleanup_image_loader()
         print("Add recipe view cleaned up")
