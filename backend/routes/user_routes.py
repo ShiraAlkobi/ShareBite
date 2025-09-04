@@ -10,6 +10,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+import json
 
 # Import your existing auth verification
 from auth_routes import verify_token
@@ -20,6 +21,34 @@ from database import execute_query, execute_non_query, execute_scalar, insert_an
 # Create router
 router = APIRouter(prefix="/users", tags=["Profile"])
 security = HTTPBearer()
+
+# ============= EVENT SOURCING HELPER =============
+def log_user_event(user_id: int, action_type: str, event_data: Dict = None):
+    """
+    Log a user event to the RecipeEvents table for event sourcing
+    Note: We use recipe_id = 0 for user-related events since it's not recipe-specific
+    
+    Args:
+        user_id (int): ID of the user performing the action
+        action_type (str): Type of action (UserRegistered, UserUpdated, UserLoggedIn, etc.)
+        event_data (Dict): Additional data to store as JSON
+    """
+    try:
+        # Convert event_data to JSON string if provided
+        event_data_json = json.dumps(event_data) if event_data else None
+        
+        # Insert event into RecipeEvents table (using RecipeID = 0 for user events)
+        execute_non_query(
+            """INSERT INTO RecipeEvents (RecipeID, UserID, ActionType, EventData) 
+               VALUES (?, ?, ?, ?)""",
+            (0, user_id, action_type, event_data_json)
+        )
+        
+        print(f"📝 User event logged: {action_type} - User {user_id}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to log user event: {e}")
+        # Don't raise exception - event logging failure shouldn't break the main operation
 
 # Pydantic models
 class UserProfileResponse(BaseModel):
@@ -135,7 +164,7 @@ def get_user_interactions(user_id: int, recipe_ids: List[int]) -> Dict[int, Dict
 # Routes
 @router.get("/{user_id}", response_model=UserProfileResponse)
 async def get_user_profile(user_id: int):
-    """Get user profile information by ID"""
+    """Get user profile information by ID - READ ONLY (no event logging)"""
     try:
         # Get user data
         user_data = execute_query(
@@ -183,7 +212,7 @@ async def update_user_profile(
     profile_data: UpdateProfileRequest,
     current_user: dict = Depends(verify_token)
 ):
-    """Update user profile information"""
+    """Update user profile information - LOGS UserUpdated EVENT"""
     # Check if user is updating their own profile
     if current_user["userid"] != user_id:
         raise HTTPException(
@@ -195,6 +224,7 @@ async def update_user_profile(
         # Build dynamic update query
         update_fields = []
         params = []
+        updated_field_names = []
         
         if profile_data.username is not None:
             # Check username uniqueness
@@ -209,6 +239,7 @@ async def update_user_profile(
                 )
             update_fields.append("Username = ?")
             params.append(profile_data.username)
+            updated_field_names.append("username")
         
         if profile_data.email is not None:
             # Check email uniqueness
@@ -223,14 +254,17 @@ async def update_user_profile(
                 )
             update_fields.append("Email = ?")
             params.append(str(profile_data.email))
+            updated_field_names.append("email")
         
         if profile_data.bio is not None:
             update_fields.append("Bio = ?")
             params.append(profile_data.bio)
+            updated_field_names.append("bio")
         
         if profile_data.profile_pic_url is not None:
             update_fields.append("ProfilePicURL = ?")
             params.append(profile_data.profile_pic_url)
+            updated_field_names.append("profile_pic_url")
         
         if not update_fields:
             raise HTTPException(
@@ -249,6 +283,16 @@ async def update_user_profile(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found"
             )
+        
+        # Log user update event
+        update_event_data = {
+            "updated_fields": updated_field_names,
+            "updated_by": current_user["username"],
+            "timestamp": datetime.now().isoformat(),
+            "has_username_change": "username" in updated_field_names,
+            "has_email_change": "email" in updated_field_names
+        }
+        log_user_event(user_id, "UserUpdated", update_event_data)
         
         # Get updated user data
         updated_user = execute_query(
@@ -286,7 +330,7 @@ async def get_user_recipes(
     offset: int = 0,
     current_user: dict = Depends(verify_token)
 ):
-    """Get recipes created by the user"""
+    """Get recipes created by the user - READ ONLY (no event logging)"""
     try:
         # Get user's recipes with engagement counts
         recipes_query = """
@@ -349,7 +393,7 @@ async def get_user_favorites(
     offset: int = 0,
     current_user: dict = Depends(verify_token)
 ):
-    """Get recipes favorited by the user"""
+    """Get recipes favorited by the user - READ ONLY (no event logging)"""
     try:
         favorites_query = """
             SELECT 
@@ -414,7 +458,7 @@ async def toggle_recipe_like(
     recipe_id: int,
     current_user: dict = Depends(verify_token)
 ):
-    """Toggle like status on a recipe"""
+    """Toggle like status on a recipe - LOGS Liked/Unliked EVENTS"""
     try:
         user_id = current_user["userid"]
         
@@ -443,6 +487,7 @@ async def toggle_recipe_like(
                 (user_id, recipe_id)
             )
             new_status = False
+            action_type = "Unliked"
         else:
             # Add like
             execute_non_query(
@@ -450,12 +495,22 @@ async def toggle_recipe_like(
                 (user_id, recipe_id)
             )
             new_status = True
+            action_type = "Liked"
         
         # Get updated total likes
         total_likes = execute_scalar(
             "SELECT COUNT(*) FROM Likes WHERE RecipeID = ?",
             (recipe_id,)
         ) or 0
+        
+        # Log the like/unlike event
+        like_event_data = {
+            "previous_state": is_liked,
+            "new_state": new_status,
+            "total_likes_after": total_likes,
+            "timestamp": datetime.now().isoformat()
+        }
+        log_user_event(user_id, action_type, like_event_data)
         
         return {
             "is_liked": new_status,
@@ -476,7 +531,7 @@ async def toggle_recipe_favorite(
     recipe_id: int,
     current_user: dict = Depends(verify_token)
 ):
-    """Toggle favorite status on a recipe"""
+    """Toggle favorite status on a recipe - LOGS Favorited/Unfavorited EVENTS"""
     try:
         user_id = current_user["userid"]
         
@@ -505,6 +560,7 @@ async def toggle_recipe_favorite(
                 (user_id, recipe_id)
             )
             new_status = False
+            action_type = "Unfavorited"
         else:
             # Add favorite
             execute_non_query(
@@ -512,12 +568,22 @@ async def toggle_recipe_favorite(
                 (user_id, recipe_id)
             )
             new_status = True
+            action_type = "Favorited"
         
         # Get updated total favorites
         total_favorites = execute_scalar(
             "SELECT COUNT(*) FROM Favorites WHERE RecipeID = ?",
             (recipe_id,)
         ) or 0
+        
+        # Log the favorite/unfavorite event
+        favorite_event_data = {
+            "previous_state": is_favorited,
+            "new_state": new_status,
+            "total_favorites_after": total_favorites,
+            "timestamp": datetime.now().isoformat()
+        }
+        log_user_event(user_id, action_type, favorite_event_data)
         
         return {
             "is_favorited": new_status,
